@@ -39,14 +39,14 @@ const Home = () => {
           <p style={{ margin: "5px 0", fontSize: 13, color: "#666" }}>
             P.O. BOX: 51200, Dubai, U.A.E
           </p>
-          <h1 style={{ marginTop: 15, fontSize: 22, color: "#8b0000", fontWeight: "bold" }}>
+          {/* <h1 style={{ marginTop: 15, fontSize: 22, color: "#8b0000", fontWeight: "bold" }}>
             Christ Experience
-          </h1>
+          </h1> */}
           <h2 style={{ margin: "8px 0", fontSize: 18, color: "#6c3483" }}>
-            Christeen Retreat 2025
+          DEO GRATIAS -2025
           </h2>
-          <p style={{ fontSize: 13, fontStyle: "italic" }}>By Marian Ministry</p>
-          <p style={{ fontSize: 13, marginTop: 5 }}>(December 20th to 25th)</p>
+          <p style={{ fontSize: 13, fontStyle: "italic" }}>Teens and Kids Retreat          </p>
+          <p style={{ fontSize: 13, marginTop: 5 }}>(December 28th to 30th)</p>
         </div>
 
         {/* Buttons Section */}
