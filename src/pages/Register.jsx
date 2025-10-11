@@ -605,14 +605,93 @@ const Header = () => (
       </div>
 
       {/* Center Text */}
-      <div style={headerStyles.center}>
-        <h2 style={headerStyles.title}>Charis Malayalam Dubai</h2>
-        <h3 style={headerStyles.subtitle}>St. Mary’s Church, Dubai</h3>
-        <p style={headerStyles.text}>P.O. BOX: 51200, Dubai, U.A.E</p>
-        <h1 style={headerStyles.mainTitle}>DEO GRATIAS -2025</h1>
-        <h2 style={headerStyles.subTitle}>Teens and Kids Retreat        </h2>
-        <p style={headerStyles.text}>(December 28th to 30th)</p>
-      </div>
+      <div
+  style={{
+    textAlign: "center",
+    borderRadius: "18px",
+    padding: "10px 20px",
+    margin: "0 auto 10px",
+    maxWidth: "650px",
+  }}
+>
+  {/* Logo (Optional — add your logo image if available) */}
+  {/* <img
+    src={Logo}
+    alt="Logo"
+    style={{
+      maxWidth: "100px",
+      marginBottom: "15px",
+    }}
+  /> */}
+
+  <h1
+    style={{
+      fontSize: "30px",
+      color: "#5a2d82",
+      textTransform: "uppercase",
+      letterSpacing: "1px",
+      fontWeight: "900",
+      margin: "0 0 10px",
+    }}
+  >
+    DEO GRATIAS – 2025
+  </h1>
+
+  <div
+    style={{
+      width: "70px",
+      height: "4px",
+      backgroundColor: "#5a2d82",
+      borderRadius: "4px",
+      margin: "12px auto 18px",
+    }}
+  ></div>
+
+  <h2
+    style={{
+      fontSize: "20px",
+      color: "#333",
+      fontStyle: "italic",
+      margin: "0 0 5px",
+      fontWeight: "500",
+    }}
+  >
+    Teens & Kids Retreat
+  </h2>
+
+  <p
+    style={{
+      fontSize: "15px",
+      color: "#555",
+      margin: "0 0 10px",
+      letterSpacing: "0.3px",
+    }}
+  >
+    (December 28th to 30th) – 3 Days
+  </p>
+
+  <h3
+    style={{
+      fontSize: "17px",
+      color: "#2c3e50",
+      fontWeight: "700",
+      margin: "15px 0 5px",
+    }}
+  >
+    St. Mary’s Church, Dubai
+  </h3>
+
+  <p
+    style={{
+      fontSize: "14px",
+      color: "#777",
+      margin: "0",
+    }}
+  >
+    P.O. BOX: 51200, Dubai, U.A.E
+  </p>
+</div>
+
 
       {/* Right Logo */}
       <div style={headerStyles.right}>
@@ -657,7 +736,7 @@ const headerStyles = {
     textAlign: "center",
   },
   logo: {
-    maxWidth: 120,
+    maxWidth: 180,
     height: "auto",
   },
   title: { margin: 0, fontSize: 18, color: "#2c3e50", textTransform: "uppercase" },
