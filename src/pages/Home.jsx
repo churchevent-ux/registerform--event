@@ -28,26 +28,82 @@ const Home = () => {
           boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
         }}
       >
-        <div style={{ marginBottom: "30px" }}>
-          <img src={Logo} alt="Logo" style={{ maxWidth: 150, marginBottom: 20 }} />
-          <h2 style={{ margin: 0, fontSize: 20, color: "#2c3e50", textTransform: "uppercase" }}>
-            Charis malayalam Dubai
-          </h2>
-          <h3 style={{ margin: "5px 0", fontSize: 16, color: "#555" }}>
-            St. Mary’s Church, Dubai
-          </h3>
-          <p style={{ margin: "5px 0", fontSize: 13, color: "#666" }}>
-            P.O. BOX: 51200, Dubai, U.A.E
-          </p>
-          {/* <h1 style={{ marginTop: 15, fontSize: 22, color: "#8b0000", fontWeight: "bold" }}>
-            Christ Experience
-          </h1> */}
-          <h2 style={{ margin: "8px 0", fontSize: 18, color: "#6c3483" }}>
-          DEO GRATIAS -2025
-          </h2>
-          <p style={{ fontSize: 13, fontStyle: "italic" }}>Teens and Kids Retreat          </p>
-          <p style={{ fontSize: 13, marginTop: 5 }}>(December 28th to 30th)</p>
-        </div>
+      <div
+  style={{
+    marginBottom: "30px",
+    textAlign: "center",
+    padding: "20px 10px",
+  
+    borderRadius: "12px",
+  }}
+>
+  <img
+    src={Logo}
+    alt="Logo"
+    style={{
+      maxWidth: 200,
+      marginBottom: 8,
+    }}
+  />
+  <h2
+    style={{
+      fontSize: 22,
+      color: "#6c3483",
+      textTransform: "uppercase",
+      letterSpacing: "1px",
+      fontWeight: 700,
+      margin: "6px 0",
+    }}
+  >
+    Deo Gratias 2025
+  </h2>
+  <p
+    style={{
+      fontSize: 14,
+      color: "#5c5c5c",
+      fontStyle: "italic",
+      margin: "2px 0 4px",
+    }}
+  >
+    Teens & Kids Retreat
+  </p>
+  <p
+    style={{
+      fontSize: 14,
+      color: "#6c3483",
+      fontWeight: 500,
+      margin: "0 0 8px",
+    }}
+  >
+    (December 28th – 30th) - 3 Days
+  </p>
+  <div
+    style={{
+      borderTop: "1px solid #e0d5f5",
+      width: "60%",
+      margin: "10px auto",
+    }}
+  ></div>
+  <h3
+    style={{
+      fontSize: 15,
+      color: "#2c3e50",
+      margin: "5px 0",
+      fontWeight: 600,
+    }}
+  >
+    St. Mary’s Church, Dubai
+  </h3>
+  <p
+    style={{
+      fontSize: 13,
+      color: "#777",
+      margin: 0,
+    }}
+  >
+    P.O. BOX: 51200, Dubai, U.A.E
+  </p>
+</div>
 
         {/* Buttons Section */}
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
