@@ -609,9 +609,8 @@ const Header = () => (
         <h2 style={headerStyles.title}>Charis Malayalam Dubai</h2>
         <h3 style={headerStyles.subtitle}>St. Mary’s Church, Dubai</h3>
         <p style={headerStyles.text}>P.O. BOX: 51200, Dubai, U.A.E</p>
-        <h1 style={headerStyles.mainTitle}>Christ Experience</h1>
-        <h2 style={headerStyles.subTitle}>Christeen Retreat 2025</h2>
-        <p style={headerStyles.textItalic}>By Marian Ministry</p>
+        <h1 style={headerStyles.mainTitle}>DEO GRATIAS -2025</h1>
+        <h2 style={headerStyles.subTitle}>Teens and Kids Retreat        </h2>
         <p style={headerStyles.text}>(December 28th to 30th)</p>
       </div>
 
@@ -766,8 +765,7 @@ const ImportantNotes = () => (
       <li>All participants must have parental consent.</li>
       <li>Medical info must be accurate; carry necessary medications.</li>
       <li>
-        Registration is confirmed only after submission of this form, along with
-        the fee of Dhs.100/- at the Office of the Spiritual Director Fr Alex.
+      Registration for the Teens and Kids Retreat will be confirmed only after submitting this form along with a fee of Dhs. 100/- at the church compound.
       </li>
       <li>Age Category: JUNIORS - 8 to 12 Years / SENIORS – 13 to 18 Years.</li>
       <li>
@@ -796,8 +794,8 @@ const ImportantNotes = () => (
           listStyleType: "circle",
         }}
       >
-       <li>Shaji Joseph: 055 7339724</li>
-        <li>Jyotish: 056 9916400</li>
+       <li>Jessin Tom James: +971506994594</li>
+        <li>Prem Das: +971504751801</li>
       </ul>
     </ul>
   </Card>
