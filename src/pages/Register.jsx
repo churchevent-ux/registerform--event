@@ -41,6 +41,7 @@ const Register = () => {
     otherCondition: "",
     medicalNotes: "",
     siblings: [], // ✅ NEW FIELD
+    hasSibling: "no",
   });
   
 
@@ -57,10 +58,10 @@ const Register = () => {
       let categoryColor = "";
   
       if (ageNow >= 7 && ageNow <= 12) {
-        category = "Junior";
+        category = "Kids";
         categoryColor = "red";
       } else if (ageNow >= 13 && ageNow <= 25) {
-        category = "Senior";
+        category = "Teen";
         categoryColor = "blue";
       }
   
@@ -123,39 +124,39 @@ const handleRemoveSibling = (index) => {
   setFormData({ ...formData, siblings: updatedSiblings });
 };
 
-const handleSubmit = async (e) => {
+const handleSubmit = (e) => {
   e.preventDefault();
-  
-  setLoading(true); // ✅ Start loading
 
-  try {
-    const usersRef = collection(db, "users");
-    const q = query(usersRef, orderBy("createdAt", "desc"), limit(1));
-    const snap = await getDocs(q);
+  // Main participant
+  const mainParticipant = { ...formData };
 
-    let lastNumber = 0;
-    snap.forEach((doc) => {
-      const lastId = doc.data()?.studentId;
-      if (lastId) lastNumber = parseInt(lastId.replace("STU-", "")) || 0;
-    });
+  // Create sibling participants
+  const siblingParticipants = (formData.hasSibling === "yes" ? formData.siblings : []).map(
+    (sibling) => ({
+      participantName: sibling.name,
+      age: sibling.age,
+      category: sibling.age >= 13 ? "Teen" : "Kids", // Or reuse your existing logic
+      categoryColor: sibling.age >= 13 ? "blue" : "red",
+      fatherName: formData.fatherName,
+      motherName: formData.motherName,
+      contactFatherMobile: formData.contactFatherMobile,
+      contactMotherMobile: formData.contactMotherMobile,
+      email: formData.email,
+      residence: formData.residence,
+      parentAgreement: formData.parentAgreement,
+      parentSignature: formData.parentSignature,
+      medicalConditions: formData.medicalConditions,
+      otherCondition: formData.otherCondition,
+      medicalNotes: formData.medicalNotes,
+      siblings: [], // Siblings of sibling ignored
+    })
+  );
 
-    const newStudentId = `STU-${String(lastNumber + 1).padStart(3, "0")}`;
-    const dataToSave = {
-      ...formData,
-      studentId: newStudentId,
-      createdAt: new Date(),
-    };
+  // Combine main participant + siblings
+  const allParticipants = [mainParticipant, ...siblingParticipants];
 
-    const docRef = await addDoc(usersRef, dataToSave);
-    const dataWithId = { ...dataToSave, docId: docRef.id };
-
-    navigate("/id-card", { state: { formData: dataWithId } });
-  } catch (err) {
-    console.error("Error submitting registration:", err);
-    alert("❌ Failed to submit registration. Please try again.");
-  } finally {
-    setLoading(false); // ✅ Stop loading
-  }
+  // Navigate to preview with all participants
+  navigate("/preview", { state: { participants: allParticipants } });
 };
 
 
@@ -219,269 +220,342 @@ const handleSubmit = async (e) => {
             </Row>
           </Card>
 
-          {/* Contact Details */}
-          <Card title="📞 Contact Details">
-  <Input
-    label="Home Contact"
-    type="tel"
-    name="contactHome"
-    value={formData.contactHome}
-    onChange={(e) => {
-      let val = e.target.value;
-
-      // Allow + only at the start, digits everywhere else
-      if (val.startsWith("+")) {
-        val = "+" + val.slice(1).replace(/\D/g, "");
-      } else {
-        val = val.replace(/\D/g, "");
-      }
-
-      setFormData({ ...formData, contactHome: val });
-    }}
-    placeholder="Enter home contact number"
-  />
+         {/* Contact Details */}
+<Card title="📞 Parent Contact Details">
   <Row>
     <Input
-      label="Father - Office"
-      type="tel"
-      name="contactFatherOffice"
-      value={formData.contactFatherOffice}
-      onChange={(e) => {
-        let val = e.target.value;
-        val = val.startsWith("+") ? "+" + val.slice(1).replace(/\D/g, "") : val.replace(/\D/g, "");
-        setFormData({ ...formData, contactFatherOffice: val });
-      }}
-      placeholder="Enter office number"
-    />
-    <Input
-      label="Father - Mobile"
+      label="Father's Mobile *"
       type="tel"
       name="contactFatherMobile"
       value={formData.contactFatherMobile}
       onChange={(e) => {
         let val = e.target.value;
-        val = val.startsWith("+") ? "+" + val.slice(1).replace(/\D/g, "") : val.replace(/\D/g, "");
+        val = val.startsWith("+")
+          ? "+" + val.slice(1).replace(/\D/g, "")
+          : val.replace(/\D/g, "");
         setFormData({ ...formData, contactFatherMobile: val });
       }}
-      placeholder="Enter mobile number"
-    />
-  </Row>
-  <Row>
-    <Input
-      label="Mother - Office"
-      type="tel"
-      name="contactMotherOffice"
-      value={formData.contactMotherOffice}
-      onChange={(e) => {
-        let val = e.target.value;
-        val = val.startsWith("+") ? "+" + val.slice(1).replace(/\D/g, "") : val.replace(/\D/g, "");
-        setFormData({ ...formData, contactMotherOffice: val });
-      }}
-      placeholder="Enter office number"
+      placeholder="Enter father's contact number"
+      required
     />
     <Input
-      label="Mother - Mobile"
+      label="Mother's Mobile *"
       type="tel"
       name="contactMotherMobile"
       value={formData.contactMotherMobile}
       onChange={(e) => {
         let val = e.target.value;
-        val = val.startsWith("+") ? "+" + val.slice(1).replace(/\D/g, "") : val.replace(/\D/g, "");
+        val = val.startsWith("+")
+          ? "+" + val.slice(1).replace(/\D/g, "")
+          : val.replace(/\D/g, "");
         setFormData({ ...formData, contactMotherMobile: val });
       }}
-      placeholder="Enter mobile number"
+      placeholder="Enter mother's contact number"
+      required
     />
   </Row>
+
   <Input
-    label="Email"
-    type="email"
-    name="email"
-    value={formData.email}
-    onChange={handleChange}
-  />
+  label="Email *"
+  type="email"
+  name="email"
+  value={formData.email}
+  onChange={handleChange}
+  placeholder="Enter parent’s email address"
+  required
+  pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+  title="Please enter a valid email address"
+/>
+
   <Input
     label="Residence Location"
     name="residence"
     value={formData.residence}
     onChange={handleChange}
+    placeholder="Enter home location"
   />
 </Card>
 
 
 
-{/* Sibling Information */}
+
+
+
+
+
+
+
+
+{/* ---------------- Sibling Attendance Section ---------------- */}
 <Card title="👫 Sibling Information">
-  {formData.siblings.length > 0 ? (
-    formData.siblings.map((sibling, index) => (
-      <div
-        key={index}
+  {/* Question */}
+  <div style={{ marginBottom: "15px" }}>
+    <label style={{ fontWeight: 600, fontSize: 15, marginBottom: 6, display: "block" }}>
+      Is your sibling attending this Teens & Kids Retreat?
+    </label>
+    <div style={{ display: "flex", gap: "20px", fontSize: 14 }}>
+      <label>
+        <input
+          type="radio"
+          name="hasSibling"
+          value="yes"
+          checked={formData.hasSibling === "yes"}
+          onChange={(e) =>
+            setFormData({ 
+              ...formData, 
+              hasSibling: e.target.value, 
+              siblings: [{ name: "", age: "", contact: "" }], 
+              siblingSaved: false 
+            })
+          }
+          disabled={formData.siblingSaved} 
+        />{" "}
+        Yes
+      </label>
+      <label>
+        <input
+          type="radio"
+          name="hasSibling"
+          value="no"
+          checked={formData.hasSibling === "no"}
+          onChange={(e) =>
+            setFormData({ ...formData, hasSibling: e.target.value, siblings: [], siblingSaved: false })
+          }
+          disabled={formData.siblingSaved}
+        />{" "}
+        No
+      </label>
+    </div>
+  </div>
+
+  {/* Saved Sibling Summary */}
+  {formData.hasSibling === "yes" && formData.siblingSaved && (
+    <>
+      {formData.siblings.map((sibling, index) => (
+        <div
+          key={index}
+          style={{
+            background: "#f8f8f8",
+            padding: "12px 15px",
+            borderRadius: 10,
+            boxShadow: "0 3px 8px rgba(0,0,0,0.05)",
+            marginBottom: 10,
+            fontSize: 14,
+          }}
+        >
+          <strong>Sibling {index + 1}</strong>
+          <p style={{ margin: 4 }}>Name: {sibling.name}</p>
+          <p style={{ margin: 4 }}>Age: {sibling.age}</p>
+          <p style={{ margin: 4 }}>Phone: {sibling.contact}</p>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={() => setFormData({ ...formData, siblingSaved: false })}
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center", // aligns button and inputs perfectly
-          gap: "10px",
-          marginBottom: "15px",
-          background: "#fafafa",
-          padding: "12px",
-          borderRadius: "8px",
-          border: "1px solid #ddd",
+          ...styles.submitButton,
+          backgroundColor: "#f39c12",
+          marginTop: 5,
+          width: "fit-content",
+          padding: "10px 18px",
         }}
       >
-        {/* Name Input */}
-        <div style={{ flex: 1, minWidth: "220px" }}>
-          <label
-            style={{
-              display: "block",
-              fontWeight: 600,
-              fontSize: 14,
-              marginBottom: 6,
-            }}
-          >
-            Sibling Name
-          </label>
-          <input
-            type="text"
-            value={sibling.name}
-            onChange={(e) =>
-              handleSiblingChange(index, "name", e.target.value)
-            }
-            style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 8,
-              border: "1px solid #ccc",
-              fontSize: 14,
-              boxSizing: "border-box",
-            }}
-          />
-        </div>
-
-        {/* Contact Input */}
-        <div style={{ flex: 1, minWidth: "220px" }}>
-          <label
-            style={{
-              display: "block",
-              fontWeight: 600,
-              fontSize: 14,
-              marginBottom: 6,
-            }}
-          >
-            Sibling Contact
-          </label>
-          <input
-            type="tel"
-            value={sibling.contact}
-            onChange={(e) =>
-              handleSiblingChange(index, "contact", e.target.value)
-            }
-            style={{
-              width: "100%",
-              padding: 10,
-              borderRadius: 8,
-              border: "1px solid #ccc",
-              fontSize: 14,
-              boxSizing: "border-box",
-            }}
-          />
-        </div>
-
-        {/* ❌ Remove Button */}
-        <button
-          type="button"
-          onClick={() => handleRemoveSibling(index)}
-          style={{
-            background: "#ff4d4d",
-            color: "#fff",
-            border: "none",
-            borderRadius: "50%",
-            width: "26px",
-            height: "26px",
-            fontSize: "18px",
-            fontWeight: "bold",
-            lineHeight: "1",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginTop: "24px", // aligns with bottom of inputs' label spacing
-          }}
-          title="Remove Sibling"
-        >
-          ×
-        </button>
-      </div>
-    ))
-  ) : (
-    <p style={{ fontSize: 14, color: "#555" }}>
-      No siblings added yet.
-    </p>
+        ✏️ Edit Sibling Details
+      </button>
+    </>
   )}
 
-  {/* Add Sibling Button */}
-  <button
-    type="button"
-    onClick={handleAddSibling}
-    style={{
-      backgroundColor: "#6c3483",
-      color: "#fff",
-      border: "none",
-      borderRadius: "8px",
-      padding: "10px 18px",
-      fontSize: "14px",
-      cursor: "pointer",
-      width: "fit-content",
-    }}
-  >
-    ➕ Add Sibling
-  </button>
+  {/* Sibling Form */}
+  {formData.hasSibling === "yes" && !formData.siblingSaved && (
+    <>
+      {formData.siblings.map((sibling, index) => {
+        // Validation to allow adding new sibling
+        const isValid =
+          sibling.name.trim().length > 0 &&
+          sibling.age >= 8 &&
+          sibling.contact.length >= 8 &&
+          sibling.contact.length <= 10;
+
+        return (
+          <div
+            key={index}
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "12px",
+              marginBottom: "15px",
+              background: "#fff",
+              padding: "15px",
+              borderRadius: "12px",
+              border: "1px solid #ddd",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+            }}
+          >
+            {/* Name Input */}
+            <Input
+              label="Name"
+              value={sibling.name}
+              onChange={(e) => {
+                let val = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+                val = val.replace(/\b\w/g, (char) => char.toUpperCase());
+                handleSiblingChange(index, "name", val);
+              }}
+              placeholder="Enter sibling's name"
+            />
+
+            {/* Age Input */}
+            <Input
+  label="Age"
+  type="number"
+          // Minimum age
+          // Maximum age
+  placeholder="Age between 8 and 18"
+  value={sibling.age}
+  onChange={(e) => {
+    let val = parseInt(e.target.value);
+
+    // enforce max
+
+    handleSiblingChange(index, "age", val);
+  }}
+/>
+
+            {/* Phone Input */}
+            <Input
+              label="Phone Number"
+              type="tel"
+              placeholder="0512345678"
+              value={sibling.contact}
+              onChange={(e) => {
+                let val = e.target.value.replace(/\D/g, "");
+                if (val.length > 10) val = val.slice(0, 10);
+                handleSiblingChange(index, "contact", val);
+              }}
+            />
+
+            {/* Remove Button */}
+            <button
+              type="button"
+              onClick={() => handleRemoveSibling(index)}
+              style={{
+                background: "#ff4d4d",
+                color: "#fff",
+                border: "none",
+                borderRadius: "50%",
+                width: "28px",
+                height: "28px",
+                fontSize: "18px",
+                fontWeight: "bold",
+                lineHeight: "1",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginTop: "28px",
+              }}
+              title="Remove Sibling"
+            >
+              ×
+            </button>
+
+            {/* Add Another Sibling Button */}
+            {index === formData.siblings.length - 1 && isValid && (
+              <button
+                type="button"
+                onClick={handleAddSibling}
+                style={{
+                  ...styles.submitButton,
+                  backgroundColor: "#6c3483",
+                  width: "fit-content",
+                  padding: "10px 18px",
+                  marginBottom: 8,
+                  height: "40px",
+                  alignSelf: "flex-end",
+                }}
+              >
+                + Add Another Sibling
+              </button>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Save Sibling Details Button */}
+      <button
+        type="button"
+        onClick={() => setFormData({ ...formData, siblingSaved: true })}
+        style={{
+          ...styles.submitButton,
+          backgroundColor: "#2ecc71",
+          width: "fit-content",
+          padding: "10px 18px",
+          marginTop: 5,
+          cursor: formData.siblings.every(s =>
+            s.name && s.age >= 8 && s.contact.length >= 8 && s.contact.length <= 10
+          ) ? "pointer" : "not-allowed",
+          opacity: formData.siblings.every(s =>
+            s.name && s.age >= 8 && s.contact.length >= 8 && s.contact.length <= 10
+          ) ? 1 : 0.6,
+        }}
+        disabled={!formData.siblings.every(s =>
+          s.name && s.age >= 8 && s.contact.length >= 8 && s.contact.length <= 10
+        )}
+      >
+        ✅ Save Sibling Details
+      </button>
+    </>
+  )}
 </Card>
 
 
 
-
           {/* Medical Info */}
-          <Card title="🩺 Medical Information">
-            <p style={{ fontSize: 14, marginBottom: 10 }}>
-              Please indicate any conditions (check all that apply):
-            </p>
-            <div style={styles.checkboxGroup}>
-              {["N/A", "Asthma", "Diabetes", "Allergies", "Epilepsy", "Other"].map(
-                (cond) => (
-                  <label key={cond} style={{ fontSize: 14 }}>
-                    <input
-                      type="checkbox"
-                      checked={formData.medicalConditions.includes(cond)}
-                      onChange={() => handleMedicalCondition(cond)}
-                    />{" "}
-                    {cond}
-                  </label>
-                )
-              )}
-            </div>
-            {formData.medicalConditions.includes("Other") && (
-              <Input
-                label="Specify other condition"
-                name="otherCondition"
-                value={formData.otherCondition}
-                onChange={handleChange}
-              />
-            )}
-          <label style={styles.label}>Additional Medical Notes</label>
-          <textarea
-  name="medicalNotes"
-  value={formData.medicalNotes}
-  onChange={handleChange}
-  placeholder="Write N/A if none"
-  disabled={formData.medicalConditions.includes("N/A")}
-  style={{
-    ...styles.textarea,
-    backgroundColor: formData.medicalConditions.includes("N/A") ? "#f0f0f0" : "#fff",
-    cursor: formData.medicalConditions.includes("N/A") ? "not-allowed" : "text",
-  }}
-/>
+   {/* Medical Info */}
+<Card title="🩺 Medical Information">
+  <p style={{ fontSize: 14, marginBottom: 10 }}>
+    Please indicate any conditions (check all that apply):
+  </p>
+  <div style={styles.checkboxGroup}>
+    {["N/A", "Asthma", "Diabetes", "Allergies", "Epilepsy", "Other"].map(
+      (cond) => (
+        <label key={cond} style={{ fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={formData.medicalConditions.includes(cond)}
+            onChange={() => handleMedicalCondition(cond)}
+            disabled={formData.medicalConditions.includes("N/A") && cond !== "N/A"} 
+          />{" "}
+          {cond}
+        </label>
+      )
+    )}
+  </div>
 
+  {formData.medicalConditions.includes("Other") && !formData.medicalConditions.includes("N/A") && (
+    <Input
+      label="Specify other condition"
+      name="otherCondition"
+      value={formData.otherCondition}
+      onChange={handleChange}
+    />
+  )}
 
-          </Card>
+  <label style={styles.label}>Additional Medical Notes</label>
+  <textarea
+    name="medicalNotes"
+    value={formData.medicalNotes}
+    onChange={handleChange}
+    placeholder="Write N/A if none"
+    disabled={formData.medicalConditions.includes("N/A")}
+    style={{
+      ...styles.textarea,
+      backgroundColor: formData.medicalConditions.includes("N/A") ? "#f0f0f0" : "#fff",
+      cursor: formData.medicalConditions.includes("N/A") ? "not-allowed" : "text",
+    }}
+  />
+</Card>
+
 
           {/* Agreement */}
           <Card title="🙏 Parent Agreement">
@@ -493,10 +567,10 @@ const handleSubmit = async (e) => {
                 onChange={handleChange}
                 required
               />{" "}
-              I agree to bring and collect my child.
+I agree to be responsible for dropping off and picking up my child from the premises.
             </label>
             <Input
-              label="Signature of Parent"
+              label="Signature of Parent (Type your full name as signature)"
               name="parentSignature"
               value={formData.parentSignature}
               onChange={handleChange}
@@ -598,13 +672,9 @@ const styles = {
 const Header = () => (
   <div style={headerStyles.container}>
     <div style={headerStyles.wrapper}>
-      {/* Left Logos */}
       <div style={headerStyles.left}>
         <img src={Logo} alt="Logo2" style={headerStyles.logo} />
-        {/* <img src={Logo3} alt="Logo3" style={headerStyles.logo} /> */}
       </div>
-
-      {/* Center Text */}
       <div
   style={{
     textAlign: "center",
@@ -614,16 +684,6 @@ const Header = () => (
     maxWidth: "650px",
   }}
 >
-  {/* Logo (Optional — add your logo image if available) */}
-  {/* <img
-    src={Logo}
-    alt="Logo"
-    style={{
-      maxWidth: "100px",
-      marginBottom: "15px",
-    }}
-  /> */}
-
   <h1
     style={{
       fontSize: "30px",
@@ -693,9 +753,8 @@ const Header = () => (
 </div>
 
 
-      {/* Right Logo */}
+    
       <div style={headerStyles.right}>
-        {/* <img src={Logo} alt="Logo" style={headerStyles.logo} /> */}
       </div>
     </div>
   </div>
@@ -776,12 +835,12 @@ const CategoryDisplay = ({ age, category }) => {
   let display = "Enter Date of Birth to see category";
 
   if (age) {
-    if (category === "Junior") {
-      display = `Junior (8–12 Years)`;
-    } else if (category === "Senior") {
-      display = `Senior (13–18 Years)`;
+    if (category === "Kids") {
+      display = `Kids (8–12 Years)`;
+    } else if (category === "Teen") {
+      display = `Teens (13–18 Years)`;
     } else {
-      display = "Not eligible (must be 8–18)";
+      display = "Not eligible (must be 8–18 Age)";
     }
   }
 
@@ -803,12 +862,9 @@ const CategoryDisplay = ({ age, category }) => {
       >
         {display}
       </div>
-
-      
     </div>
   );
 };
-
 
 const Card = ({ title, children }) => (
   <div
@@ -846,24 +902,24 @@ const ImportantNotes = () => (
       <li>
       Registration for the Teens and Kids Retreat will be confirmed only after submitting this form along with a fee of Dhs. 100/- at the church compound.
       </li>
-      <li>Age Category: JUNIORS - 8 to 12 Years / SENIORS – 13 to 18 Years.</li>
       <li>
-        Drop-off at 8:15 AM and pick-up at 5:15 PM from the entrance of Main
-        Hall.
+      Participants will be provided with breakfast, lunch, and snacks during the retreat.
+       </li>
+      <li>Age Category: Kids - 8 to 12 Years / Teens – 13 to 18 Years.</li>
+      <li>
+      Drop-off at 8:30 AM and pick-up at 4:30 PM will be from the exit near the basketball court.
       </li>
       <li>Please carry your ID badge every day.</li>
       <li>
         Transportation will not be provided; parents are responsible for
         bringing and collecting their child.
       </li>
-      <li>Please bring Bible, notebook, pen; food will be served.</li>
+      <li>Please bring Bible, notebook, pen.</li>
       <li>
-        Mobile phones, smartwatches, and any other electronic gadgets are strictly
-        not allowed during the session.
-      </li>
+  Smartphones, smartwatches, and any other electronic devices are strictly not allowed during the session. Any such devices brought by participants will be collected and safely stored for the duration of the session.
+</li>
       <li>
-        For any further information or queries, please contact Christeen team
-        members:
+      For any further information or queries, please contact the coordinators:
       </li>
       <ul
         style={{
