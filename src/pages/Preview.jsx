@@ -71,12 +71,7 @@ const Preview = () => {
     return true;
   };
   
-const handleFinalSubmit = async () => {
-    if (!validate()) {
-      alert("❌ Please fill all mandatory fields including medical conditions.");
-      return;
-    }
-  
+  const handleFinalSubmit = async () => {
     setLoading(true);
     try {
       const usersRef = collection(db, "users");
@@ -99,7 +94,7 @@ const handleFinalSubmit = async () => {
         const dataToSave = { 
           ...p, 
           studentId: newStudentId, 
-          familyId: newFamilyId, // use for barcode & display
+          familyId: newFamilyId,
           createdAt: new Date() 
         };
   
@@ -107,9 +102,7 @@ const handleFinalSubmit = async () => {
         savedDocs.push({ ...dataToSave, docId: docRef.id });
       }
   
-      alert("✅ Registration submitted successfully!");
-  
-      // Send first participant as main, others as siblings
+      // Directly navigate to ID card page without alert
       navigate("/id-card", {
         state: {
           formData: savedDocs[0],
@@ -123,6 +116,7 @@ const handleFinalSubmit = async () => {
       setLoading(false);
     }
   };
+  
   
 
   const renderField = (participant, index, label, name, type = "text") => (
