@@ -1,174 +1,199 @@
-import React, { useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { QRCodeCanvas } from "qrcode.react";
 import { toPng } from "html-to-image";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import Logo from "../images//church logo2.png";
+import { FaDownload, FaWhatsapp } from "react-icons/fa";
+import JsBarcode from "jsbarcode";
+import Logo from "../images/church logo2.png";
 
 const IDCard = () => {
-  const navigate = useNavigate();
   const { state } = useLocation();
-  const cardRef = useRef();
-  const buttonRef = useRef();
+  const navigate = useNavigate();
+  const [participants, setParticipants] = useState([]);
+  const [downloading, setDownloading] = useState(false);
 
-  // Redirect if no registration data
+  const cardRef = useRef();
+  const barcodeRefs = useRef({});
+
   useEffect(() => {
     if (!state?.formData) navigate("/register");
+    else {
+      const allParticipants = [state.formData, ...(state.siblings || [])].map(
+        (p) => ({
+          ...p,
+          familyId: p.familyId || `STU-${Math.floor(10000 + Math.random() * 90000)}`,
+        })
+      );
+      setParticipants(allParticipants);
+    }
   }, [state, navigate]);
 
-  if (!state?.formData) return null;
+  // Generate barcodes
+  useEffect(() => {
+    participants.forEach((p) => {
+      if (barcodeRefs.current[p.familyId]) {
+        JsBarcode(barcodeRefs.current[p.familyId], p.familyId, {
+          format: "CODE128",
+          displayValue: true, // show ID under barcode
+          height: 50,
+          lineColor: "#4b0082",
+        });
+      }
+    });
+  }, [participants]);
 
-  const { formData } = state;
-  const userId = formData.studentId || "TEMP-ID";
+  const capitalizeName = (name) =>
+    name
+      ? name
+          .split(" ")
+          .map(
+            (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+          )
+          .join(" ")
+      : "";
 
-  // Determine color based on category
-  const categoryColor =
-    formData.category === "Junior"
-      ? "#ff4d4d" // red
-      : formData.category === "Senior"
-      ? "darkblue" // blue
-      : "#6c3483"; // default purple
-
-  // Determine font style based on medical conditions
-  const hasMedicalIssue =
-    formData.medicalConditions?.some(
-      (condition) => condition && condition.toUpperCase() !== "N/A"
-    );
-
-  // Download ID Card as PNG and update Firestore
   const handleDownload = async () => {
     if (!cardRef.current) return;
-
-    // Hide button while generating image
-    if (buttonRef.current) buttonRef.current.style.display = "none";
-
+    setDownloading(true);
     try {
       const dataUrl = await toPng(cardRef.current);
       const link = document.createElement("a");
       link.href = dataUrl;
-      link.download = `${formData.participantName || "Participant"}_ID.png`;
+      link.download = `${capitalizeName(participants[0].participantName)}_ID.png`;
       link.click();
 
-      // Save QR/ID info to Firestore
-      if (formData.docId) {
-        const userDocRef = doc(db, "users", formData.docId);
-        await updateDoc(userDocRef, {
-          idGenerated: true,
-          idGeneratedAt: new Date(),
-          generatedId: userId,
-          qrValue: userId,
-        });
-        console.log("ID generation saved in Firestore");
+      // Save generated IDs in Firebase
+      for (let p of participants) {
+        if (p.docId) {
+          const ref = doc(db, "users", p.docId);
+          await updateDoc(ref, {
+            idGenerated: true,
+            generatedId: p.familyId,
+            generatedAt: new Date(),
+          });
+        }
       }
     } catch (err) {
-      console.error("Error generating ID image:", err);
-    } finally {
-      if (buttonRef.current) buttonRef.current.style.display = "inline-block";
+      console.error("Download error:", err);
     }
+    setDownloading(false);
   };
 
+  const handleShareWhatsApp = () => {
+    const ids = participants.map((p) => `${p.participantName}: ${p.familyId}`).join("\n");
+    const message = `My registration IDs for Deo Gratias 2025 Teens & Kids Retreat:\n${ids}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`);
+  };
+
+  if (!participants.length) return null;
+
+  const main = participants[0];
+  const siblings = participants.slice(1);
+
   return (
-    <div style={styles.container}>
-      <div
-        ref={cardRef}
-        style={{ ...styles.card, border: `2px solid ${categoryColor}` }}
-      >
-        {/* Logo & Organization Info */}
-        <div style={styles.logoSection}>
+    <div style={styles.page}>
+      <div ref={cardRef} style={styles.card}>
+        {/* Header */}
+        <div style={styles.header}>
           <img src={Logo} alt="Logo" style={styles.logo} />
-          <h3 style={styles.organization}>Malayalee Catholic Community</h3>
-          <p style={styles.subText}>St. Mary’s Church, Dubai</p>
-          <p style={styles.subTextSmall}>P.O. BOX: 51200, Dubai, U.A.E</p>
+          <div style={styles.headerText}>
+            <h1 style={styles.title}>Deo Gratias 2025</h1>
+            <p style={styles.subtitle}>Teens & Kids Retreat</p>
+            <p style={styles.date}>(Dec 28 – 30) | St. Mary’s Church, Dubai</p>
+            <p style={styles.date}>P.O. BOX: 51200, Dubai, U.A.E</p>
+          </div>
         </div>
 
-        {/* Participant Name */}
-        <h2
-          style={{
-            ...styles.participantName,
-            fontStyle: hasMedicalIssue ? "italic" : "normal",
-          }}
-        >
-          {formData.participantName || "Participant Name"}
-        </h2>
+        <hr style={styles.divider} />
 
-        {/* Generated ID */}
-        <p style={styles.idText}>ID: {userId}</p>
-
-        {/* QR Code */}
-        <div style={styles.qrCode}>
-          <QRCodeCanvas value={userId} size={150} fgColor={categoryColor} />
+        {/* Main Participant */}
+        <div style={styles.participant}>
+          <h2 style={styles.name}>Main Participant: {capitalizeName(main.participantName)}</h2>
+          <p style={styles.id}><strong>ID: {main.familyId}</strong></p>
+          <p style={styles.siblingDetail}>
+            Category: {main.category || "N/A"} | Medical: {main.medicalConditions || "N/A"}
+          </p>
+          <div style={styles.barcodeWrapper}>
+            <svg ref={(el) => (barcodeRefs.current[main.familyId] = el)}></svg>
+          </div>
         </div>
 
-        {/* Download Button */}
-        <button
-          ref={buttonRef}
-          onClick={handleDownload}
-          style={{ ...styles.button, background: categoryColor }}
-        >
-          Download ID
+        {/* Siblings Section */}
+        {siblings.length > 0 && (
+          <div style={styles.siblingsCard}>
+            <h3 style={styles.siblingTitle}>Siblings Registered</h3>
+            {siblings.map((sib, idx) => (
+              <div key={idx} style={styles.siblingItem}>
+                <p style={styles.siblingName}>
+                  👧 {capitalizeName(sib.participantName)} ({sib.age || "N/A"} yrs)
+                </p>
+                <p style={styles.id}><strong>ID: {sib.familyId}</strong></p>
+                <p style={styles.siblingDetail}>
+                  Category: {sib.category || "N/A"} | Medical: {sib.medicalConditions || "N/A"}
+                </p>
+                {sib.familyId && (
+                  <div style={styles.barcodeWrapper}>
+                    <svg ref={(el) => (barcodeRefs.current[sib.familyId] = el)}></svg>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Schedule Section */}
+        <div style={styles.scheduleCard}>
+          <h3 style={styles.scheduleTitle}>Lanyard Distribution</h3>
+          <div style={styles.scheduleList}>
+            <p><strong>Sat, Nov 15 & 22:</strong> 9:30am–12:30pm | 4:00pm–6:30pm</p>
+            <p><strong>Sun, Nov 16 & 23:</strong> 9:30am–11:30am | 5:30pm–7:30pm</p>
+            <p><strong>Sat, Dec 27:</strong> 9:30am–12:00pm</p>
+          </div>
+          <p style={{fontSize:"10PX"}}>    Note:   Registration for the Teens and Kids Retreat will be confirmed only after submitting this form along with a fee of Dhs. 100/- at the church compound.
+          </p>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div style={styles.buttons}>
+        <button onClick={handleDownload} style={styles.download}>
+          <FaDownload /> {downloading ? "Downloading..." : "Download"}
+        </button>
+        <button onClick={handleShareWhatsApp} style={styles.share}>
+          <FaWhatsapp /> Share on WhatsApp
         </button>
       </div>
     </div>
   );
 };
 
-// ---------- Styles ----------
+// --- Styles (same as before, minor tweaks) ---
 const styles = {
-  container: {
-    display: "flex",
-    justifyContent: "center",
-    padding: 20,
-  },
-  card: {
-    width: 320,
-    padding: 20,
-    borderRadius: 12,
-    textAlign: "center",
-    background: "#fff",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-  },
-  logoSection: {
-    marginBottom: 12,
-  },
-  logo: {
-    maxWidth: 150,
-    marginBottom: 6,
-  },
-  organization: {
-    margin: "4px 0",
-    fontSize: 15,
-    color: "#2c3e50",
-  },
-  subText: {
-    margin: "2px 0",
-    fontSize: 13,
-    color: "#555",
-  },
-  subTextSmall: {
-    margin: "2px 0",
-    fontSize: 12,
-    color: "#777",
-  },
-  participantName: {
-    margin: 5,
-    color: "#6c3483",
-  },
-  idText: {
-    margin: 5,
-    fontWeight: "bold",
-  },
-  qrCode: {
-    marginTop: 20,
-  },
-  button: {
-    marginTop: 20,
-    padding: "10px 20px",
-    color: "#fff",
-    border: "none",
-    borderRadius: 8,
-    cursor: "pointer",
-  },
+  page: { fontFamily: "'Poppins', sans-serif", display: "flex", flexDirection: "column", alignItems: "center", background: "#fff", minHeight: "80vh", padding: 20, gap: 20 },
+  card: { width: 360, borderRadius: 25, background: "#fff", padding: 20, boxShadow: "0 20px 40px rgba(0,0,0,0.15)", display: "flex", flexDirection: "column", gap: 15 },
+  header: { display: "flex", alignItems: "center", gap: 15 },
+  logo: { width: 60, height: 60, borderRadius: "50%", border: "2px solid #6c3483" },
+  headerText: { display: "flex", flexDirection: "column" },
+  title: { margin: 0, fontSize: 22, color: "#6c3483", fontWeight: 700 },
+  subtitle: { margin: 0, fontSize: 14, color: "#555", fontWeight: "bold" },
+  date: { margin: 0, fontSize: 12, color: "#333" },
+  divider: { border: "1px solid #e0d4ff", margin: "10px 0" },
+  participant: { textAlign: "center", padding: "10px 0" },
+  name: { fontSize: 20, color: "#4b0082", margin: 0 },
+  id: { fontSize: 13, margin: 3, color: "#6c3483", fontWeight: 600 },
+  siblingDetail: { fontSize: 12, color: "#555", marginTop: 3 },
+  siblingsCard: { background: "#fdf0ff", borderRadius: 15, padding: 10, boxShadow: "0 8px 20px rgba(0,0,0,0.1)" },
+  siblingTitle: { fontSize: 16, fontWeight: 700, color: "#6c3483", marginBottom: 8 },
+  siblingItem: { background: "#fff", borderRadius: 8, padding: "8px 10px", marginBottom: 6, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" },
+  siblingName: { fontWeight: 600, color: "#4b0082", fontSize: 14, margin: 0 },
+  scheduleCard: { background: "#fdf0ff", borderRadius: 15, padding: 8, boxShadow: "0 8px 20px rgba(0,0,0,0.1)" },
+  scheduleTitle: { fontSize: 16, fontWeight: 700, color: "#6c3483", marginBottom: 8 },
+  scheduleList: { fontSize: 13, lineHeight: 1.5, color: "#333" },
+  barcodeWrapper: { marginTop: 10, display: "flex", justifyContent: "center" },
+  buttons: { display: "flex", gap: 12, marginTop: 15, justifyContent: "center" },
+  download: { background: "#6c3483", color: "#fff", border: "none", borderRadius: 10, padding: "10px 15px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontWeight: 600 },
+  share: { background: "#25d366", color: "#fff", border: "none", borderRadius: 10, padding: "10px 15px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontWeight: 600 },
 };
 
 export default IDCard;
