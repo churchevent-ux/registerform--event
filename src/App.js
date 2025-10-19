@@ -21,6 +21,7 @@ import Attendance from "./pages/attendence";
 import BreakIn from "./pages/break";
 import Notifications from "./pages//notifications";
 import Volunteers from "./pages/volunteers";
+import Preview from "./pages/Preview";
 
 // ===================== Volunteer Pages =====================
 import VolunteerRegister from "./pages/VolunteerRegister";
@@ -42,6 +43,8 @@ function App() {
         <Route path="/volunteer-register" element={<VolunteerRegister />} />
         <Route path="/volunteer-id" element={<VolunteerIDCard />} />
         <Route path="/attendance-scanner" element={<AttendanceScanner />} />
+        <Route path="/preview" element={<Preview />} />
+
 
         {/* -------------------- Admin Routes with Layout -------------------- */}
         <Route path="/admin" element={<AdminLayout />}>
