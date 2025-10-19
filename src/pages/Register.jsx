@@ -931,6 +931,8 @@ const ImportantNotes = () => (
       >
        <li>Jessin Tom James: +971506994594</li>
         <li>Prem Das: +971504751801</li>
+        <li>Jenny Thekkooden : +971561213388</li>
+        <li>Neema Charles : +971506023112</li>
       </ul>
     </ul>
   </Card>
