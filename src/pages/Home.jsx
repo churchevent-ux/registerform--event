@@ -60,9 +60,10 @@ const Home = () => {
   <p
     style={{
       fontSize: 14,
-      color: "#5c5c5c",
+      color: "#000",
       fontStyle: "italic",
       margin: "2px 0 4px",
+      fontWeight:'bold'
     }}
   >
     Teens & Kids Retreat
