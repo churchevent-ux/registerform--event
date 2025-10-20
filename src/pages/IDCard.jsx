@@ -178,7 +178,7 @@ const IDCard = () => {
             </p>
           </div>
           <p style={{ fontSize: "12px", color: "#bf524b", fontWeight: "bold" }}>
-            Note: Registration confirmed only after submitting this form along with Dhs. 100/- fee at the church.
+            Note: Registration for the Teens and Kids Retreat will be  confirmed only after submitting this form along with Dhs. 100/- fee at the church.
           </p>
         </div>
       </div>
