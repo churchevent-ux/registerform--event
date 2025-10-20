@@ -30,6 +30,8 @@ const fieldRefs = {
   contactMotherMobile: useRef(null),
   email: useRef(null),
   parentAgreement: useRef(null),
+    primaryContactNumber: useRef(null), // ✅ Add this
+
 };
 
   const [formData, setFormData] = useState({
@@ -93,14 +95,35 @@ const fieldRefs = {
     }
   }, [formData.dob]);
   
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+const formatFieldName = (field) => {
+  const map = {
+    participantName: "Participant Name",
+    dob: "Date of Birth",
+    primaryContactNumber: "Primary Contact Number",
+    contactFatherMobile: "Father's Mobile",
+    contactMotherMobile: "Mother's Mobile",
+    email: "Email",
+    parentAgreement: "Parent Agreement",
+    // Add any other fields as needed
   };
+  return map[field] || field;
+};
+
+ const handleChange = (e) => {
+  const { name, value, type, checked } = e.target;
+
+  setFormData((prev) => ({
+    ...prev,
+    [name]: type === "checkbox" ? checked : value,
+  }));
+
+  // Clear error if this field was previously invalid
+  if (errorField === name) {
+    setErrorField(null);
+  }
+};
+
+
 
   const handleMedicalCondition = (cond) => {
     setFormData((prev) => {
@@ -143,8 +166,7 @@ const handleSubmit = (e) => {
   const requiredFields = [
     "participantName",
     "dob",
-    "contactFatherMobile",
-    "contactMotherMobile",
+      "primaryContactNumber",
     "email",
     "parentAgreement",
   ];
@@ -306,6 +328,7 @@ const handleSubmit = (e) => {
     </div>
 
 <Input
+  ref={fieldRefs.primaryContactNumber}
   label="Primary Contact Number *"
   type="tel"
   name="primaryContactNumber"
@@ -319,14 +342,24 @@ const handleSubmit = (e) => {
   }}
   onBlur={(e) => {
     const val = e.target.value.trim();
-    const isValidUAE = /^(\+9715\d{8}|05\d{8})$/.test(val);
+    const cleaned = val.replace(/[^\d+]/g, "");
+    const isValidUAE = /^(\+9715\d{8}|05\d{8})$/.test(cleaned);
     if (!isValidUAE && val !== "") {
-      alert("Please enter a valid UAE number (e.g., +9715XXXXXXXX or 05XXXXXXXX)");
+      alert(
+        "Please enter a valid UAE number (e.g., +9715XXXXXXXX or 05XXXXXXXX)"
+      );
     }
   }}
   placeholder="Enter UAE number (e.g. +9715XXXXXXXX or 05XXXXXXXX)"
   required
+  style={{
+    borderColor: errorField === "primaryContactNumber" ? "red" : "#ddd",
+    backgroundColor:
+      errorField === "primaryContactNumber" ? "#ffe6e6" : "white",
+  }}
 />
+
+
 
   </Row>
 
@@ -701,7 +734,7 @@ const handleSubmit = (e) => {
       textAlign: "center",
     }}
   >
-    ⚠️ Please fill out the highlighted field before submitting.
+    ⚠️ Please fill out the <strong>{formatFieldName(errorField)}</strong> field before submitting.
   </div>
 )}
 
@@ -1072,9 +1105,10 @@ const ImportantNotes = () => (
           listStyleType: "circle",
         }}
       >
-       <li>Jessin Tom James: +971506994594</li>
+   
         <li>Prem Das: +971504751801</li>
         <li>Jenny Thekkooden : +971561213388</li>
+            <li>Jessin Tom James: +971506994594</li>
         <li>Neema Charles : +971506023112</li>
       </ul>
     </ul>

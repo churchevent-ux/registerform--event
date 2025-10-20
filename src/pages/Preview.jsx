@@ -7,6 +7,7 @@ import {
   query,
   orderBy,
   limit,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
 
@@ -16,133 +17,157 @@ const Preview = () => {
   const [participants, setParticipants] = useState(state?.participants || []);
   const [loading, setLoading] = useState(false);
 
+  // ---------------- UTILITY ----------------
+  const calculateAge = (dob) => {
+    if (!dob) return null;
+    const birth = new Date(dob);
+    if (isNaN(birth.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) age--;
+    return age;
+  };
 
+  const getCategory = (age) => {
+    if (age >= 8 && age <= 12) return "DGK";
+    if (age >= 13 && age <= 18) return "DGT";
+    return null;
+  };
+
+  // -------------- INITIALIZE PARTICIPANTS --------------
   useEffect(() => {
-    const updated = participants.map((p) => {
-      if (!p.category && p.age) {
-        const ageNum = parseInt(p.age);
-        return { ...p, category: ageNum >= 13 ? "Teen" : "Kids" };
-      }
-      return p;
-    });
-    setParticipants(updated);
-  }, [participants.length]);
-
-  if (!participants || participants.length === 0) {
-    return (
-      <div style={styles.center}>
-        <h2>No registration data found</h2>
-        <button onClick={() => navigate("/register")} style={styles.button}>
-          Go Back
-        </button>
-      </div>
+    setParticipants((prev) =>
+      prev.map((p) => {
+        const age = p.age ?? (p.dob ? calculateAge(p.dob) : null);
+        return {
+          ...p,
+          age,
+          category: p.category ?? (age ? getCategory(age) : ""),
+          medicalConditions: p.medicalConditions || "",
+          additionalMedicalNotes: p.additionalMedicalNotes || "",
+        };
+      })
     );
-  }
+  }, []);
 
+  // ---------------- HANDLERS ----------------
   const handleChange = (index, field, value) => {
-    const updated = [...participants];
-    updated[index][field] = value;
+    setParticipants((prev) => {
+      const updated = [...prev];
+      updated[index][field] = value;
 
+      if (field === "dob") {
+        const age = calculateAge(value);
+        updated[index].age = age;
+        updated[index].category = getCategory(age) || "";
+      }
 
-   if (field === "age") {
-      const ageNum = parseInt(value);
-      updated[index].category = !isNaN(ageNum)
-        ? ageNum >= 13
-          ? "Teen"
-          : "Kids"
-        : "";
-    }
-
-    setParticipants(updated);
+      return updated;
+    });
   };
 
   const handleDelete = (index) => {
-    const updated = participants.filter((_, i) => i !== index);
-    setParticipants(updated);
+    setParticipants((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const validate = () => {
-    for (let p of participants) {
-      if (!p.participantName || !p.age || !p.category || !p.medicalConditions)
-        return false;
-      if (p.medicalConditions === "Other" && !p.otherMedicalCondition)
-        return false;
+  const validateParticipants = () => {
+    for (let i = 0; i < participants.length; i++) {
+      const p = participants[i];
+      if (!p.participantName) return false;
+      if (!p.age || p.age < 8 || p.age > 18) return false;
+      if (!p.category) return false;
+
+      if (i === 0 && (!p.dob || !p.primaryContactNumber)) return false;
+      if (p.medicalConditions === "Other" && !p.additionalMedicalNotes) return false;
     }
     return true;
   };
-  
- const handleFinalSubmit = async () => {
-  setLoading(true);
-  try {
-    const usersRef = collection(db, "users");
-    const savedDocs = [];
 
-    for (let p of participants) {
-      // Fetch last document to get the latest number
+  // ---------------- FINAL SUBMIT ----------------
+  const handleFinalSubmit = async () => {
+    if (!validateParticipants()) {
+      alert("❌ Please fill all required fields correctly and ensure valid ages (8–18).");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const usersRef = collection(db, "users");
+      const savedDocs = [];
+
+      // Get last student ID number
       const q = query(usersRef, orderBy("createdAt", "desc"), limit(1));
       const snap = await getDocs(q);
       let lastNumber = 0;
       snap.forEach((doc) => {
         const lastId = doc.data()?.studentId;
-        if (lastId) {
-          const num = parseInt(lastId.replace(/\D/g, "")); // strip all letters
-          if (!isNaN(num)) lastNumber = num;
-        }
+        const num = lastId ? parseInt(lastId.replace(/\D/g, "")) : 0;
+        if (!isNaN(num)) lastNumber = num;
       });
 
-      // Determine prefix based on category
-      const isTeen = p.category?.toLowerCase().includes("teen");
-      const prefix = isTeen ? "DGT" : "DGK"; // DGT = Teens, DGK = Kids
+      // Save each participant
+      for (const p of participants) {
+        lastNumber++;
 
-      // Create studentId (sequential) and familyId (same as studentId)
-      const newStudentId = `${prefix}-${String(lastNumber + 1).padStart(3, "0")}`;
+        const prefix = getCategory(p.age);
+        if (!prefix) {
+          alert(`❌ Participant ${p.participantName} has invalid age.`);
+          setLoading(false);
+          return;
+        }
 
-      const dataToSave = {
-        ...p,
-        studentId: newStudentId,
-        familyId: newStudentId, // use same for ID card reference
-        createdAt: new Date(),
-      };
+        const studentId = `${prefix}-${String(lastNumber).padStart(3, "0")}`;
 
-      const docRef = await addDoc(usersRef, dataToSave);
-      savedDocs.push({ ...dataToSave, docId: docRef.id });
+        const data = {
+          participantName: p.participantName,
+          dob: p.dob || null,
+          age: p.age,
+          category: prefix,
+          primaryContactNumber: p.primaryContactNumber || "",
+          primaryContactRelationship: p.primaryContactRelationship || "",
+          medicalConditions: p.medicalConditions || "",
+          additionalMedicalNotes: p.additionalMedicalNotes || "",
+          studentId,
+          familyId: studentId,
+          createdAt: serverTimestamp(),
+        };
+
+        const docRef = await addDoc(usersRef, data);
+        savedDocs.push({ ...data, docId: docRef.id });
+      }
+
+      navigate("/id-card", {
+        state: { formData: savedDocs[0], siblings: savedDocs.slice(1) },
+      });
+    } catch (err) {
+      console.error(err);
+      alert(`❌ Submission failed: ${err.message}`);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Navigate to ID card page
-    navigate("/id-card", {
-      state: {
-        formData: savedDocs[0],
-        siblings: savedDocs.slice(1),
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    alert("❌ Submission failed. Please try again.");
-  } finally {
-    setLoading(false);
-  }
-};
-
-  
-
-  const renderField = (participant, index, label, name, type = "text") => (
+  const renderInput = (participant, index, label, name, type = "text", readOnly = false) => (
     <div style={styles.field}>
       <label style={styles.label}>{label}</label>
       <input
         style={styles.input}
         type={type}
-        value={participant[name] || ""}
+        value={participant[name] ?? ""}
         onChange={(e) => handleChange(index, name, e.target.value)}
+        readOnly={readOnly}
       />
     </div>
   );
 
+  // ----------------- RENDER -----------------
   return (
     <div style={styles.container}>
-      <div style={styles.header}>
+      <header style={styles.header}>
         <h2>Review & Edit Registration</h2>
         <p>Edit details before final submission</p>
-      </div>
+      </header>
 
       <div style={styles.cardsContainer}>
         {participants.map((p, index) => (
@@ -150,10 +175,7 @@ const Preview = () => {
             <div style={styles.cardHeader}>
               <h3>{index === 0 ? "Main Participant" : `Sibling ${index}`}</h3>
               {index !== 0 && (
-                <button
-                  style={styles.deleteBtn}
-                  onClick={() => handleDelete(index)}
-                >
+                <button style={styles.deleteBtn} onClick={() => handleDelete(index)}>
                   ✕
                 </button>
               )}
@@ -161,47 +183,39 @@ const Preview = () => {
 
             <div style={styles.cardBody}>
               <div style={styles.grid}>
-                {renderField(p, index, "Full Name", "participantName")}
-                {renderField(p, index, "Age", "age", "number")}
-                {renderField(p, index, "Category", "category", "text")}
-                {renderField(p, index, "Father's Name", "fatherName")}
-                {renderField(p, index, "Mother's Name", "motherName")}
-                {renderField(p, index, "Father's Mobile", "contactFatherMobile")}
-                {renderField(p, index, "Mother's Mobile", "contactMotherMobile")}
-                {renderField(p, index, "Email", "email", "email")}
-                {renderField(p, index, "Residence", "residence")}
-
+                {renderInput(p, index, "Participant's Name", "participantName")}
+                {index === 0
+                  ? renderInput(p, index, "Date of Birth", "dob", "date")
+                  : renderInput(p, index, "Age", "age", "text", true)}
+                {renderInput(p, index, "Category Code", "category", "text", true)}
+                {renderInput(
+                  p,
+                  index,
+                  index === 0
+                    ? "Primary Contact Number"
+                    : "Primary Contact Number (optional)",
+                  "primaryContactNumber"
+                )}
+                {index === 0 &&
+                  renderInput(p, index, "Primary Contact Relationship", "primaryContactRelationship")}
                 <div style={styles.field}>
-                  <label>Medical Conditions *</label>
+                  <label>Medical Conditions</label>
                   <select
                     style={styles.input}
                     value={p.medicalConditions || ""}
-                    onChange={(e) =>
-                      handleChange(index, "medicalConditions", e.target.value)
-                    }
+                    onChange={(e) => handleChange(index, "medicalConditions", e.target.value)}
                   >
-                    <option value="">Select</option>
-                    <option value="None">None</option>
+                    <option value="">Select condition</option>
+                    <option value="N/A">N/A</option>
                     <option value="Asthma">Asthma</option>
-                    <option value="Allergy">Allergy</option>
                     <option value="Diabetes">Diabetes</option>
+                    <option value="Allergies">Allergies</option>
+                    <option value="Epilepsy">Epilepsy</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
-
-                {p.medicalConditions === "Other" && (
-                  <div style={styles.field}>
-                    <label>Specify Condition *</label>
-                    <input
-                      style={styles.input}
-                      type="text"
-                      value={p.otherMedicalCondition || ""}
-                      onChange={(e) =>
-                        handleChange(index, "otherMedicalCondition", e.target.value)
-                      }
-                    />
-                  </div>
-                )}
+                {p.medicalConditions === "Other" &&
+                  renderInput(p, index, "Additional Medical Notes", "additionalMedicalNotes")}
               </div>
             </div>
           </div>
@@ -209,18 +223,10 @@ const Preview = () => {
       </div>
 
       <div style={styles.buttonGroup}>
-        <button
-          style={styles.backBtn}
-          onClick={() => navigate(-1)}
-          disabled={loading}
-        >
+        <button style={styles.backBtn} onClick={() => navigate(-1)} disabled={loading}>
           ← Back to Form
         </button>
-        <button
-          style={styles.submitBtn}
-          onClick={handleFinalSubmit}
-          disabled={loading}
-        >
+        <button style={styles.submitBtn} onClick={handleFinalSubmit} disabled={loading}>
           {loading ? "Submitting..." : "✅ Submit All"}
         </button>
       </div>
@@ -228,96 +234,20 @@ const Preview = () => {
   );
 };
 
-// --- STYLES ---
 const styles = {
-  container: {
-    maxWidth: 1100,
-    margin: "0 auto",
-    padding: "20px 15px",
-    fontFamily: "'Poppins', sans-serif",
-  },
-  header: {
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  cardsContainer: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 20,
-  },
-  card: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 12,
-    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-  },
-  cardHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  deleteBtn: {
-    backgroundColor: "#e74c3c",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    padding: "5px 10px",
-    cursor: "pointer",
-  },
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: 15,
-  },
-  field: {
-    marginBottom: 10,
-  },
-  label: {
-    fontWeight: 600,
-    marginBottom: 5,
-    display: "block",
-  },
-  input: {
-    width: "100%",
-    padding: 10,
-    borderRadius: 6,
-    border: "1px solid #ccc",
-    fontSize: 14,
-    boxSizing: "border-box",
-  },
-  buttonGroup: {
-    display: "flex",
-    justifyContent: "center",
-    gap: 15,
-    marginTop: 25,
-    flexWrap: "wrap",
-  },
-  backBtn: {
-    backgroundColor: "#aaa",
-    color: "#fff",
-    border: "none",
-    padding: "12px 20px",
-    borderRadius: 8,
-    fontSize: 15,
-    cursor: "pointer",
-  },
-  submitBtn: {
-    backgroundColor: "#6c3483",
-    color: "#fff",
-    border: "none",
-    padding: "12px 20px",
-    borderRadius: 8,
-    fontSize: 15,
-    cursor: "pointer",
-  },
-  center: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "100vh",
-    flexDirection: "column",
-  },
+  container: { maxWidth: 800, margin: "0 auto", padding: "20px 15px", fontFamily: "'Poppins', sans-serif" },
+  header: { textAlign: "center", marginBottom: 20 },
+  cardsContainer: { display: "flex", flexDirection: "column", gap: 20 },
+  card: { backgroundColor: "#fff", padding: 20, borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" },
+  cardHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 15 },
+  deleteBtn: { backgroundColor: "#e74c3c", color: "#fff", border: "none", borderRadius: 6, padding: "5px 10px", cursor: "pointer" },
+  grid: { display: "grid", gridTemplateColumns: "1fr", gap: 15 },
+  field: { marginBottom: 10 },
+  label: { fontWeight: 600, marginBottom: 5, display: "block" },
+  input: { width: "100%", padding: 10, borderRadius: 6, border: "1px solid #ccc", fontSize: 14, boxSizing: "border-box" },
+  buttonGroup: { display: "flex", justifyContent: "center", gap: 15, marginTop: 25, flexWrap: "wrap" },
+  backBtn: { backgroundColor: "#aaa", color: "#fff", border: "none", padding: "12px 20px", borderRadius: 8, fontSize: 15, cursor: "pointer" },
+  submitBtn: { backgroundColor: "#6c3483", color: "#fff", border: "none", padding: "12px 20px", borderRadius: 8, fontSize: 15, cursor: "pointer" },
 };
 
 export default Preview;
