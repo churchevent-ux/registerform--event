@@ -109,8 +109,8 @@ const IDCard = () => {
 
         {/* Main Participant */}
         <div style={styles.participant}>
-          <h2 style={styles.name}>Main Participant: {capitalizeName(main.participantName)}</h2>
-          <p style={styles.id}><strong>ID: {main.familyId}</strong></p>
+          <h2 style={styles.name}> {capitalizeName(main.participantName)}</h2>
+          {/* <p style={styles.id}><strong>ID: {main.familyId}</strong></p> */}
           <p style={styles.siblingDetail}>
             Category: {main.category || "N/A"} | Medical: {main.medicalConditions || "N/A"}
           </p>
@@ -146,11 +146,12 @@ const IDCard = () => {
         <div style={styles.scheduleCard}>
           <h3 style={styles.scheduleTitle}>Lanyard Distribution</h3>
           <div style={styles.scheduleList}>
-            <p><strong>Sat, Nov 15 & 22:</strong> 9:30am–12:30pm | 4:00pm–6:30pm</p>
-            <p><strong>Sun, Nov 16 & 23:</strong> 9:30am–11:30am | 5:30pm–7:30pm</p>
-            <p><strong>Sat, Dec 27:</strong> 9:30am–12:00pm</p>
+<p><strong>Saturday, November 15 & 22, 2025:</strong> 9:30am–12:30pm | 4:00pm–6:30pm</p>
+<p><strong>Sunday, November 16 & 23, 2025:</strong> 9:30am–11:30am | 5:30pm–7:30pm</p>
+<p><strong>Saturday, December 27, 2025:</strong> 9:30am–12:00pm</p>
+
           </div>
-          <p style={{fontSize:"10PX"}}>    Note:   Registration for the Teens and Kids Retreat will be confirmed only after submitting this form along with a fee of Dhs. 100/- at the church compound.
+          <p style={{fontSize:"12PX",color:"#bf524b",fontWeight:"bold"}}>    Note:   Registration for the Teens and Kids Retreat will be confirmed only after submitting this form along with a fee of Dhs. 100/- each at the church compound.
           </p>
         </div>
       </div>
@@ -189,7 +190,7 @@ const styles = {
   siblingName: { fontWeight: 600, color: "#4b0082", fontSize: 14, margin: 0 },
   scheduleCard: { background: "#fdf0ff", borderRadius: 15, padding: 8, boxShadow: "0 8px 20px rgba(0,0,0,0.1)" },
   scheduleTitle: { fontSize: 16, fontWeight: 700, color: "#6c3483", marginBottom: 8 },
-  scheduleList: { fontSize: 13, lineHeight: 1.5, color: "#333" },
+  scheduleList: { fontSize: 12, lineHeight: 1.5, color: "#333" },
   barcodeWrapper: { marginTop: 10, display: "flex", justifyContent: "center" },
   buttons: { display: "flex", gap: 12, marginTop: 15, justifyContent: "center" },
   download: { background: "#6c3483", color: "#fff", border: "none", borderRadius: 10, padding: "10px 15px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontWeight: 600 },

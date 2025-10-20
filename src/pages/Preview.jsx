@@ -71,52 +71,58 @@ const Preview = () => {
     return true;
   };
   
-  const handleFinalSubmit = async () => {
-    setLoading(true);
-    try {
-      const usersRef = collection(db, "users");
-      const savedDocs = [];
-  
-      for (let p of participants) {
-        // Fetch last ID
-        const q = query(usersRef, orderBy("createdAt", "desc"), limit(1));
-        const snap = await getDocs(q);
-        let lastNumber = 0;
-        snap.forEach((doc) => {
-          const lastId = doc.data()?.studentId;
-          if (lastId) lastNumber = parseInt(lastId.replace("STU-", "")) || 0;
-        });
-  
-        // Assign new separate ID per participant
-        const newStudentId = `STU-${String(lastNumber + 1).padStart(3, "0")}`;
-        const newFamilyId = `MCC-${String(lastNumber + 1).padStart(5, "0")}`;
-  
-        const dataToSave = { 
-          ...p, 
-          studentId: newStudentId, 
-          familyId: newFamilyId,
-          createdAt: new Date() 
-        };
-  
-        const docRef = await addDoc(usersRef, dataToSave);
-        savedDocs.push({ ...dataToSave, docId: docRef.id });
-      }
-  
-      // Directly navigate to ID card page without alert
-      navigate("/id-card", {
-        state: {
-          formData: savedDocs[0],
-          siblings: savedDocs.slice(1),
-        },
+ const handleFinalSubmit = async () => {
+  setLoading(true);
+  try {
+    const usersRef = collection(db, "users");
+    const savedDocs = [];
+
+    for (let p of participants) {
+      // Fetch last document to get the latest number
+      const q = query(usersRef, orderBy("createdAt", "desc"), limit(1));
+      const snap = await getDocs(q);
+      let lastNumber = 0;
+      snap.forEach((doc) => {
+        const lastId = doc.data()?.studentId;
+        if (lastId) {
+          const num = parseInt(lastId.replace(/\D/g, "")); // strip all letters
+          if (!isNaN(num)) lastNumber = num;
+        }
       });
-    } catch (err) {
-      console.error(err);
-      alert("❌ Submission failed. Please try again.");
-    } finally {
-      setLoading(false);
+
+      // Determine prefix based on category
+      const isTeen = p.category?.toLowerCase().includes("teen");
+      const prefix = isTeen ? "DGT" : "DGK"; // DGT = Teens, DGK = Kids
+
+      // Create studentId (sequential) and familyId (same as studentId)
+      const newStudentId = `${prefix}-${String(lastNumber + 1).padStart(3, "0")}`;
+
+      const dataToSave = {
+        ...p,
+        studentId: newStudentId,
+        familyId: newStudentId, // use same for ID card reference
+        createdAt: new Date(),
+      };
+
+      const docRef = await addDoc(usersRef, dataToSave);
+      savedDocs.push({ ...dataToSave, docId: docRef.id });
     }
-  };
-  
+
+    // Navigate to ID card page
+    navigate("/id-card", {
+      state: {
+        formData: savedDocs[0],
+        siblings: savedDocs.slice(1),
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    alert("❌ Submission failed. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
   
 
   const renderField = (participant, index, label, name, type = "text") => (
