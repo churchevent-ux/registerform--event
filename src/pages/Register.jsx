@@ -162,11 +162,11 @@ const handleRemoveSibling = (index) => {
 const handleSubmit = (e) => {
   e.preventDefault();
 
-  // Simple validation checks
+  // Validation for required fields
   const requiredFields = [
     "participantName",
     "dob",
-      "primaryContactNumber",
+    "primaryContactNumber",
     "email",
     "parentAgreement",
   ];
@@ -179,29 +179,53 @@ const handleSubmit = (e) => {
     if (!isValid) {
       setErrorField(field);
       fieldRefs[field]?.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return; // stop submit until fixed
+      return;
     }
   }
 
-  // Passed validation — proceed
   setErrorField(null);
   setLoading(true);
 
-  // Main participant
-  const mainParticipant = { ...formData };
+  // Prepare main participant
+  const mainParticipant = {
+    participantName: formData.participantName,
+    dob: formData.dob,
+    age: formData.age,
+    category: formData.category,
+    categoryColor: formData.categoryColor,
+    fatherName: formData.fatherName,
+    motherName: formData.motherName,
+    contactFatherMobile: formData.contactFatherMobile,
+    contactMotherMobile: formData.contactMotherMobile,
+    primaryContactNumber: formData.primaryContactNumber,
+    primaryContactRelation: formData.primaryContactRelation,
+    secondaryContactNumber: formData.secondaryContactNumber || "",
+    secondaryContactRelationship: formData.secondaryContactRelationship || "",
+    email: formData.email,
+    residence: formData.residence,
+    parentAgreement: formData.parentAgreement,
+    parentSignature: formData.parentSignature,
+    medicalConditions: formData.medicalConditions,
+    otherCondition: formData.otherCondition,
+    medicalNotes: formData.medicalNotes,
+  };
 
-  // Sibling participants (if any)
+  // Sibling participants
   const siblingParticipants =
     formData.hasSibling === "yes"
-      ? formData.siblings.map((sibling) => ({
-          participantName: sibling.name,
-          age: sibling.age,
-          category: sibling.age >= 13 ? "Teen" : "Kids",
-          categoryColor: sibling.age >= 13 ? "blue" : "red",
+      ? formData.siblings.map((s) => ({
+          participantName: s.name,
+          age: s.age,
+          category: s.age >= 13 ? "Teen" : "Kids",
+          categoryColor: s.age >= 13 ? "blue" : "red",
           fatherName: formData.fatherName,
           motherName: formData.motherName,
           contactFatherMobile: formData.contactFatherMobile,
           contactMotherMobile: formData.contactMotherMobile,
+          primaryContactNumber: formData.primaryContactNumber,
+          primaryContactRelation: formData.primaryContactRelation,
+          secondaryContactNumber: formData.secondaryContactNumber || "",
+          secondaryContactRelationship: formData.secondaryContactRelationship || "",
           email: formData.email,
           residence: formData.residence,
           parentAgreement: formData.parentAgreement,
@@ -209,11 +233,32 @@ const handleSubmit = (e) => {
           medicalConditions: formData.medicalConditions,
           otherCondition: formData.otherCondition,
           medicalNotes: formData.medicalNotes,
-          siblings: [],
         }))
       : [];
 
-  const allParticipants = [mainParticipant, ...siblingParticipants];
+const allParticipants = [
+  mainParticipant,
+  ...(formData.hasSibling === "yes"
+      ? formData.siblings.map((sibling) => ({
+          ...sibling,
+          fatherName: formData.fatherName,
+          motherName: formData.motherName,
+          primaryContactNumber: formData.primaryContactNumber,
+          primaryContactRelation: formData.primaryContactRelation,
+          secondaryContactNumber: formData.secondaryContactNumber || "",
+          secondaryContactRelationship: formData.secondaryContactRelationship || "",
+          email: formData.email,
+          residence: formData.residence,
+          parentAgreement: formData.parentAgreement,
+          parentSignature: formData.parentSignature,
+          medicalConditions: formData.medicalConditions,
+          otherCondition: formData.otherCondition,
+          medicalNotes: formData.medicalNotes,
+        }))
+      : []),
+];
+
+navigate("/preview", { state: { participants: allParticipants } });
 
   setLoading(false);
   navigate("/preview", { state: { participants: allParticipants } });
@@ -237,7 +282,7 @@ const handleSubmit = (e) => {
           <Card title="👦 Participant Information">
            <Input
   ref={fieldRefs.participantName}
-  label="Participant's Name (CAPITALS)"
+  label="Participant' Full Name (CAPITALS)"
   name="participantName"
   value={formData.participantName}
   onChange={handleChange}
@@ -304,8 +349,8 @@ const handleSubmit = (e) => {
     {/* Primary Contact */}
     <div style={{ flex: 1, minWidth: "250px", marginBottom: 10 }}>
       <label style={{ fontWeight: 600, marginBottom: 6, display: "block", fontSize: 14 }}>
-        Primary Contact Relationship
-      </label>
+      Parent / Guardian *
+            </label>
       <select
         name="primaryContactRelation"
         value={formData.primaryContactRelation || ""}
@@ -329,7 +374,7 @@ const handleSubmit = (e) => {
 
 <Input
   ref={fieldRefs.primaryContactNumber}
-  label="Primary Contact Number *"
+  label="Contact Number *"
   type="tel"
   name="primaryContactNumber"
   value={formData.primaryContactNumber || ""}
@@ -365,43 +410,82 @@ const handleSubmit = (e) => {
 
   {/* Secondary / Additional Contact */}
   <Row>
-    <div style={{ flex: 1, minWidth: "250px", marginBottom: 10 }}>
-      <label style={{ fontWeight: 600, marginBottom: 6, display: "block", fontSize: 14 }}>
-        Additional Contact (Optional)
-      </label>
-    <input
-  type="tel"
-  name="secondaryContactNumber"
-  value={formData.secondaryContactNumber || ""}
-  maxLength={13}
-  onChange={(e) => {
-    let val = e.target.value.startsWith("+")
-      ? "+" + e.target.value.slice(1).replace(/\D/g, "")
-      : e.target.value.replace(/\D/g, "");
-    setFormData({ ...formData, secondaryContactNumber: val });
-  }}
-  onBlur={(e) => {
-    const val = e.target.value.trim();
-    if (val) {
-      const isValidUAE = /^(\+9715\d{8}|05\d{8})$/.test(val);
-      if (!isValidUAE) {
-        alert("Please enter a valid UAE number (e.g., +9715XXXXXXXX or 05XXXXXXXX)");
-      }
-    }
-  }}
-  placeholder="Enter UAE number (max 13 digits, optional)"
-  style={{
-    width: "100%",
-    padding: 10,
-    borderRadius: 8,
-    border: "1px solid #ddd",
-    fontSize: 14,
-    boxSizing: "border-box",
-  }}
-/>
+  <div style={{ flex: 1, minWidth: "250px", marginBottom: 10 }}>
+    <label
+      style={{
+        fontWeight: 600,
+        marginBottom: 6,
+        display: "block",
+        fontSize: 14,
+      }}
+    >
+Secondary Contact (Optional)
+    </label>
 
+    <div style={{ display: "flex", gap: 8 }}>
+      {/* Relationship select */}
+      <select
+        value={formData.secondaryContactRelationship || ""}
+        onChange={(e) =>
+          setFormData({ ...formData, secondaryContactRelationship: e.target.value })
+        }
+        style={{
+          flex: 1,
+          padding: 10,
+          borderRadius: 8,
+          border: "1px solid #ddd",
+          fontSize: 14,
+          boxSizing: "border-box",
+        }}
+      >
+        <option value="">Select relationship</option>
+        <option value="Parent">Parent</option>
+        <option value="Guardian">Guardian</option>
+        <option value="Other">Other</option>
+      </select>
+
+      {/* Phone number input */}
+      <input
+        type="tel"
+
+        name="secondaryContactNumber"
+        value={formData.secondaryContactNumber || ""}
+        maxLength={13}
+        onChange={(e) => {
+          let val = e.target.value.startsWith("+")
+            ? "+" + e.target.value.slice(1).replace(/\D/g, "")
+            : e.target.value.replace(/\D/g, "");
+          setFormData({ ...formData, secondaryContactNumber: val });
+        }}
+        onBlur={(e) => {
+          const val = e.target.value.trim();
+          if (val) {
+            const isValidUAE = /^(\+9715\d{8}|05\d{8})$/.test(val);
+            if (!isValidUAE) {
+              alert(
+                "Please enter a valid UAE number (e.g., +9715XXXXXXXX or 05XXXXXXXX)"
+              );
+            }
+          }
+        }}
+ placeholder="Enter UAE number (e.g. +9715XXXXXXXX or 05XXXXXXXX)"
+        style={{
+          flex: 1,
+          padding: 10,
+          borderRadius: 8,
+          border: "1px solid #ddd",
+          fontSize: 14,
+          boxSizing: "border-box",
+        }}
+      />
     </div>
-  </Row>
+  </div>
+</Row>
+
+
+
+
+
 
   <Input
     ref={fieldRefs.email}
@@ -493,7 +577,7 @@ const handleSubmit = (e) => {
           }}
         >
           <strong>Sibling {index + 1}</strong>
-          <p style={{ margin: 4 }}>Name: {sibling.name}</p>
+          <p style={{ margin: 4 }}>Full Name: {sibling.name}</p>
           <p style={{ margin: 4 }}>Age: {sibling.age}</p>
         </div>
       ))}
@@ -635,49 +719,58 @@ const handleSubmit = (e) => {
 
           {/* Medical Info */}
    {/* Medical Info */}
-<Card title="🩺 Medical Information">
-  <p style={{ fontSize: 14, marginBottom: 10 }}>
-    Please indicate any conditions (check all that apply):
-  </p>
-  <div style={styles.checkboxGroup}>
-    {["N/A", "Asthma", "Diabetes", "Allergies", "Epilepsy", "Other"].map(
-      (cond) => (
-        <label key={cond} style={{ fontSize: 14 }}>
-          <input
-            type="checkbox"
-            checked={formData.medicalConditions.includes(cond)}
-            onChange={() => handleMedicalCondition(cond)}
-            disabled={formData.medicalConditions.includes("N/A") && cond !== "N/A"} 
-          />{" "}
-          {cond}
-        </label>
-      )
-    )}
-  </div>
+{/* Show Medical Info only if no sibling */}
+{formData.hasSibling === "no" && (
+  <Card title="🩺 Medical Information">
+    <p style={{ fontSize: 14, marginBottom: 10 }}>
+      Please indicate any conditions (check all that apply):
+    </p>
+    <div style={styles.checkboxGroup}>
+      {["N/A", "Asthma", "Diabetes", "Allergies", "Epilepsy", "Other"].map(
+        (cond) => (
+          <label key={cond} style={{ fontSize: 14 }}>
+            <input
+              type="checkbox"
+              checked={formData.medicalConditions.includes(cond)}
+              onChange={() => handleMedicalCondition(cond)}
+              disabled={formData.medicalConditions.includes("N/A") && cond !== "N/A"}
+            />{" "}
+            {cond}
+          </label>
+        )
+      )}
+    </div>
 
-  {formData.medicalConditions.includes("Other") && !formData.medicalConditions.includes("N/A") && (
-    <Input
-      label="Specify other condition"
-      name="otherCondition"
-      value={formData.otherCondition}
+    {formData.medicalConditions.includes("Other") &&
+      !formData.medicalConditions.includes("N/A") && (
+        <Input
+          label="Specify other condition"
+          name="otherCondition"
+          value={formData.otherCondition}
+          onChange={handleChange}
+        />
+      )}
+
+    <label style={styles.label}>Additional Medical Notes</label>
+    <textarea
+      name="medicalNotes"
+      value={formData.medicalNotes}
       onChange={handleChange}
+      placeholder="Write N/A if none"
+      disabled={formData.medicalConditions.includes("N/A")}
+      style={{
+        ...styles.textarea,
+        backgroundColor: formData.medicalConditions.includes("N/A")
+          ? "#f0f0f0"
+          : "#fff",
+        cursor: formData.medicalConditions.includes("N/A")
+          ? "not-allowed"
+          : "text",
+      }}
     />
-  )}
+  </Card>
+)}
 
-  <label style={styles.label}>Additional Medical Notes</label>
-  <textarea
-    name="medicalNotes"
-    value={formData.medicalNotes}
-    onChange={handleChange}
-    placeholder="Write N/A if none"
-    disabled={formData.medicalConditions.includes("N/A")}
-    style={{
-      ...styles.textarea,
-      backgroundColor: formData.medicalConditions.includes("N/A") ? "#f0f0f0" : "#fff",
-      cursor: formData.medicalConditions.includes("N/A") ? "not-allowed" : "text",
-    }}
-  />
-</Card>
 
 
           {/* Agreement */}
@@ -1083,19 +1176,18 @@ const ImportantNotes = () => (
        </li>
       <li>Age Category: Kids - 8 to 12 Years / Teens – 13 to 18 Years.</li>
       <li>
-      Drop-off at 8:30 AM and pick-up at 4:30 PM will be from the exit near the basketball court.
+      Drop-off at 8:30 AM and pick-up at 4:30 PM will be from the basketball court.
       </li>
       <li>Please carry your ID badge every day.</li>
       <li>
-        Transportation will not be provided; parents are responsible for
-        bringing and collecting their child.
+        Transportation will not be provided; Parents are responsible for
+        dropping off and picking up thier Children from the premises.
       </li>
-      <li>Please bring Bible, notebook, pen.</li>
+      <li>Please bring a Bible, r osary, notebook, and pen.</li>
       <li>
-  Smartphones, smartwatches, and any other electronic devices are strictly not allowed during the session. Any such devices brought by participants will be collected and safely stored for the duration of the session.
-</li>
+      Smartphones, smartwatches, and other electronic devices are strictly not allowed during the session. Any devices brought by participants will be safely kept and returned after the session.</li>
       <li>
-      For any further information or queries, please contact the coordinators:
+      For any further information or queries, please contact the following numbers:
       </li>
       <ul
         style={{
