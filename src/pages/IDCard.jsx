@@ -165,7 +165,11 @@ const IDCard = () => {
 
         {/* Schedule / Notes */}
         <div style={styles.scheduleCard}>
-          <h3 style={styles.scheduleTitle}>Lanyard Distribution</h3>
+        <p style={{ fontSize: "12px", color: "#bf524b" }}>
+  <span style={{ fontWeight: "bold" }}>Note:</span> Registration is confirmed only after the payment of AED 100/- each for an applicant.
+</p>
+
+          <h3 style={styles.scheduleTitle}>  Lanyard Distribution at Church Premises          </h3>
           <div style={styles.scheduleList}>
             <p>
               <strong>Saturday, November 15 & 22, 2025:</strong> 9:30am–12:30pm | 4:00pm–6:30pm
@@ -177,9 +181,7 @@ const IDCard = () => {
               <strong>Saturday, December 27, 2025:</strong> 9:30am–12:00pm
             </p>
           </div>
-          <p style={{ fontSize: "12px", color: "#bf524b", fontWeight: "bold" }}>
-            Note: Registration for the Teens and Kids Retreat will be  confirmed only after submitting this form along with Dhs. 100/- fee at the church.
-          </p>
+         
         </div>
       </div>
 
