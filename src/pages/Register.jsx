@@ -1183,7 +1183,7 @@ const ImportantNotes = () => (
         Transportation will not be provided; Parents are responsible for
         dropping off and picking up thier Children from the premises.
       </li>
-      <li>Please bring a Bible, r osary, notebook, and pen.</li>
+      <li>Please bring a Bible, rosary, notebook, and pen.</li>
       <li>
       Smartphones, smartwatches, and other electronic devices are strictly not allowed during the session. Any devices brought by participants will be safely kept and returned after the session.</li>
       <li>
