@@ -176,7 +176,7 @@ const handleSubmit = (e) => {
           {/* Participant Info */}
           <Card title="👦 Participant Information">
             <Input
-              label="Participant's Name (CAPITALS)"
+              label="Participant's Full Name (CAPITALS)"
               name="participantName"
               value={formData.participantName}
               onChange={handleChange}
