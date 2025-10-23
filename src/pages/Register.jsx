@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   collection,
@@ -18,7 +18,21 @@ import Logo3 from "../images/logo2.png";
 const Register = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+const [errorField, setErrorField] = useState(null);
 
+
+
+
+const fieldRefs = {
+  participantName: useRef(null),
+  dob: useRef(null),
+  contactFatherMobile: useRef(null),
+  contactMotherMobile: useRef(null),
+  email: useRef(null),
+  parentAgreement: useRef(null),
+    primaryContactNumber: useRef(null), // ✅ Add this
+
+};
 
   const [formData, setFormData] = useState({
     participantName: "",
@@ -81,14 +95,35 @@ const Register = () => {
     }
   }, [formData.dob]);
   
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+const formatFieldName = (field) => {
+  const map = {
+    participantName: "Participant Name",
+    dob: "Date of Birth",
+    primaryContactNumber: "Primary Contact Number",
+    contactFatherMobile: "Father's Mobile",
+    contactMotherMobile: "Mother's Mobile",
+    email: "Email",
+    parentAgreement: "Parent Agreement",
+    // Add any other fields as needed
   };
+  return map[field] || field;
+};
+
+ const handleChange = (e) => {
+  const { name, value, type, checked } = e.target;
+
+  setFormData((prev) => ({
+    ...prev,
+    [name]: type === "checkbox" ? checked : value,
+  }));
+
+  // Clear error if this field was previously invalid
+  if (errorField === name) {
+    setErrorField(null);
+  }
+};
+
+
 
   const handleMedicalCondition = (cond) => {
     setFormData((prev) => {
@@ -127,35 +162,105 @@ const handleRemoveSibling = (index) => {
 const handleSubmit = (e) => {
   e.preventDefault();
 
-  // Main participant
-  const mainParticipant = { ...formData };
+  // Validation for required fields
+  const requiredFields = [
+    "participantName",
+    "dob",
+    "primaryContactNumber",
+    "email",
+    "parentAgreement",
+  ];
 
-  // Create sibling participants
-  const siblingParticipants = (formData.hasSibling === "yes" ? formData.siblings : []).map(
-    (sibling) => ({
-      participantName: sibling.name,
-      age: sibling.age,
-      category: sibling.age >= 13 ? "Teen" : "Kids", // Or reuse your existing logic
-      categoryColor: sibling.age >= 13 ? "blue" : "red",
-      fatherName: formData.fatherName,
-      motherName: formData.motherName,
-      contactFatherMobile: formData.contactFatherMobile,
-      contactMotherMobile: formData.contactMotherMobile,
-      email: formData.email,
-      residence: formData.residence,
-      parentAgreement: formData.parentAgreement,
-      parentSignature: formData.parentSignature,
-      medicalConditions: formData.medicalConditions,
-      otherCondition: formData.otherCondition,
-      medicalNotes: formData.medicalNotes,
-      siblings: [], // Siblings of sibling ignored
-    })
-  );
+  for (let field of requiredFields) {
+    const value = formData[field];
+    const isValid =
+      typeof value === "boolean" ? value === true : value && value.trim() !== "";
 
-  // Combine main participant + siblings
-  const allParticipants = [mainParticipant, ...siblingParticipants];
+    if (!isValid) {
+      setErrorField(field);
+      fieldRefs[field]?.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+  }
 
-  // Navigate to preview with all participants
+  setErrorField(null);
+  setLoading(true);
+
+  // Prepare main participant
+  const mainParticipant = {
+    participantName: formData.participantName,
+    dob: formData.dob,
+    age: formData.age,
+    category: formData.category,
+    categoryColor: formData.categoryColor,
+    fatherName: formData.fatherName,
+    motherName: formData.motherName,
+    contactFatherMobile: formData.contactFatherMobile,
+    contactMotherMobile: formData.contactMotherMobile,
+    primaryContactNumber: formData.primaryContactNumber,
+    primaryContactRelation: formData.primaryContactRelation,
+    secondaryContactNumber: formData.secondaryContactNumber || "",
+    secondaryContactRelationship: formData.secondaryContactRelationship || "",
+    email: formData.email,
+    residence: formData.residence,
+    parentAgreement: formData.parentAgreement,
+    parentSignature: formData.parentSignature,
+    medicalConditions: formData.medicalConditions,
+    otherCondition: formData.otherCondition,
+    medicalNotes: formData.medicalNotes,
+  };
+
+  // Sibling participants
+  const siblingParticipants =
+    formData.hasSibling === "yes"
+      ? formData.siblings.map((s) => ({
+          participantName: s.name,
+          age: s.age,
+          category: s.age >= 13 ? "Teen" : "Kids",
+          categoryColor: s.age >= 13 ? "blue" : "red",
+          fatherName: formData.fatherName,
+          motherName: formData.motherName,
+          contactFatherMobile: formData.contactFatherMobile,
+          contactMotherMobile: formData.contactMotherMobile,
+          primaryContactNumber: formData.primaryContactNumber,
+          primaryContactRelation: formData.primaryContactRelation,
+          secondaryContactNumber: formData.secondaryContactNumber || "",
+          secondaryContactRelationship: formData.secondaryContactRelationship || "",
+          email: formData.email,
+          residence: formData.residence,
+          parentAgreement: formData.parentAgreement,
+          parentSignature: formData.parentSignature,
+          medicalConditions: formData.medicalConditions,
+          otherCondition: formData.otherCondition,
+          medicalNotes: formData.medicalNotes,
+        }))
+      : [];
+
+const allParticipants = [
+  mainParticipant,
+  ...(formData.hasSibling === "yes"
+      ? formData.siblings.map((sibling) => ({
+          ...sibling,
+          fatherName: formData.fatherName,
+          motherName: formData.motherName,
+          primaryContactNumber: formData.primaryContactNumber,
+          primaryContactRelation: formData.primaryContactRelation,
+          secondaryContactNumber: formData.secondaryContactNumber || "",
+          secondaryContactRelationship: formData.secondaryContactRelationship || "",
+          email: formData.email,
+          residence: formData.residence,
+          parentAgreement: formData.parentAgreement,
+          parentSignature: formData.parentSignature,
+          medicalConditions: formData.medicalConditions,
+          otherCondition: formData.otherCondition,
+          medicalNotes: formData.medicalNotes,
+        }))
+      : []),
+];
+
+navigate("/preview", { state: { participants: allParticipants } });
+
+  setLoading(false);
   navigate("/preview", { state: { participants: allParticipants } });
 };
 
@@ -175,35 +280,53 @@ const handleSubmit = (e) => {
         <form onSubmit={handleSubmit} style={styles.form}>
           {/* Participant Info */}
           <Card title="👦 Participant Information">
-            <Input
-              label="Participant's Full Name (CAPITALS)"
-              name="participantName"
-              value={formData.participantName}
-              onChange={handleChange}
-              required
-            />
+           <Input
+  ref={fieldRefs.participantName}
+  label="Participant' Full Name (CAPITALS)"
+  name="participantName"
+  value={formData.participantName}
+  onChange={handleChange}
+  required
+  style={{
+    borderColor: errorField === "participantName" ? "red" : "#ddd",
+    backgroundColor: errorField === "participantName" ? "#ffe6e6" : "white",
+  }}
+/>
+
             <Row>
-              <Input
-                label="Date of Birth"
-                type="date"
-                name="dob"
-                value={formData.dob}
-                onChange={handleChange}
-                required
-              />
-              <Input
-                label="Age (auto)"
-                type="text"
-                name="age"
-                value={formData.age}
-                readOnly
-              />
+           <Input
+  ref={fieldRefs.dob}
+  label="Date of Birth"
+  type="date"
+  name="dob"
+  value={formData.dob}
+  onChange={handleChange}
+  required
+  style={{
+    borderColor: errorField === "dob" ? "red" : "#ddd",
+    backgroundColor: errorField === "dob" ? "#ffe6e6" : "white",
+  }}
+/>
+{/* <Input
+  ref={fieldRefs.contactFatherMobile}
+  label="Father's Mobile *"
+  type="tel"
+  name="contactFatherMobile"
+  value={formData.contactFatherMobile}
+  onChange={handleChange}
+  required
+  style={{
+    borderColor: errorField === "contactFatherMobile" ? "red" : "#ddd",
+    backgroundColor:
+      errorField === "contactFatherMobile" ? "#ffe6e6" : "white",
+  }}
+/> */}
             </Row>
             <CategoryDisplay age={formData.age} category={formData.category} />
           </Card>
 
           {/* Parent Info */}
-          <Card title="👨‍👩‍👧 Parent Information">
+          {/* <Card title="👨‍👩‍👧 Parent Information">
             <Row>
               <Input
                 label="Father’s Name"
@@ -218,54 +341,165 @@ const handleSubmit = (e) => {
                 onChange={handleChange}
               />
             </Row>
-          </Card>
+          </Card> */}
 
          {/* Contact Details */}
-<Card title="📞 Parent Contact Details">
+<Card title="📞 Parent / Guardian Contact">
   <Row>
-    <Input
-      label="Father's Mobile *"
-      type="tel"
-      name="contactFatherMobile"
-      value={formData.contactFatherMobile}
-      onChange={(e) => {
-        let val = e.target.value;
-        val = val.startsWith("+")
-          ? "+" + val.slice(1).replace(/\D/g, "")
-          : val.replace(/\D/g, "");
-        setFormData({ ...formData, contactFatherMobile: val });
-      }}
-      placeholder="Enter father's contact number"
-      required
-    />
-    <Input
-      label="Mother's Mobile *"
-      type="tel"
-      name="contactMotherMobile"
-      value={formData.contactMotherMobile}
-      onChange={(e) => {
-        let val = e.target.value;
-        val = val.startsWith("+")
-          ? "+" + val.slice(1).replace(/\D/g, "")
-          : val.replace(/\D/g, "");
-        setFormData({ ...formData, contactMotherMobile: val });
-      }}
-      placeholder="Enter mother's contact number"
-      required
-    />
+    {/* Primary Contact */}
+    <div style={{ flex: 1, minWidth: "250px", marginBottom: 10 }}>
+      <label style={{ fontWeight: 600, marginBottom: 6, display: "block", fontSize: 14 }}>
+      Parent / Guardian *
+            </label>
+      <select
+        name="primaryContactRelation"
+        value={formData.primaryContactRelation || ""}
+        onChange={handleChange}
+        required
+        style={{
+          width: "100%",
+          padding: 10,
+          borderRadius: 8,
+          border: "1px solid #ddd",
+          fontSize: 14,
+          boxSizing: "border-box",
+        }}
+      >
+        <option value="">Select relationship</option>
+        <option value="Father">Father</option>
+        <option value="Mother">Mother</option>
+        <option value="Guardian">Guardian</option>
+      </select>
+    </div>
+
+<Input
+  ref={fieldRefs.primaryContactNumber}
+  label="Contact Number *"
+  type="tel"
+  name="primaryContactNumber"
+  value={formData.primaryContactNumber || ""}
+  maxLength={13}
+  onChange={(e) => {
+    let val = e.target.value.startsWith("+")
+      ? "+" + e.target.value.slice(1).replace(/\D/g, "")
+      : e.target.value.replace(/\D/g, "");
+    setFormData({ ...formData, primaryContactNumber: val });
+  }}
+  onBlur={(e) => {
+    const val = e.target.value.trim();
+    const cleaned = val.replace(/[^\d+]/g, "");
+    const isValidUAE = /^(\+9715\d{8}|05\d{8})$/.test(cleaned);
+    if (!isValidUAE && val !== "") {
+      alert(
+        "Please enter a valid UAE number (e.g., +9715XXXXXXXX or 05XXXXXXXX)"
+      );
+    }
+  }}
+  placeholder="Enter UAE number (e.g. +9715XXXXXXXX or 05XXXXXXXX)"
+  required
+  style={{
+    borderColor: errorField === "primaryContactNumber" ? "red" : "#ddd",
+    backgroundColor:
+      errorField === "primaryContactNumber" ? "#ffe6e6" : "white",
+  }}
+/>
+
+
+
   </Row>
 
+  {/* Secondary / Additional Contact */}
+  <Row>
+  <div style={{ flex: 1, minWidth: "250px", marginBottom: 10 }}>
+    <label
+      style={{
+        fontWeight: 600,
+        marginBottom: 6,
+        display: "block",
+        fontSize: 14,
+      }}
+    >
+Secondary Contact (Optional)
+    </label>
+
+    <div style={{ display: "flex", gap: 8 }}>
+      {/* Relationship select */}
+      <select
+        value={formData.secondaryContactRelationship || ""}
+        onChange={(e) =>
+          setFormData({ ...formData, secondaryContactRelationship: e.target.value })
+        }
+        style={{
+          flex: 1,
+          padding: 10,
+          borderRadius: 8,
+          border: "1px solid #ddd",
+          fontSize: 14,
+          boxSizing: "border-box",
+        }}
+      >
+        <option value="">Select relationship</option>
+        <option value="Parent">Parent</option>
+        <option value="Guardian">Guardian</option>
+        <option value="Other">Other</option>
+      </select>
+
+      {/* Phone number input */}
+      <input
+        type="tel"
+
+        name="secondaryContactNumber"
+        value={formData.secondaryContactNumber || ""}
+        maxLength={13}
+        onChange={(e) => {
+          let val = e.target.value.startsWith("+")
+            ? "+" + e.target.value.slice(1).replace(/\D/g, "")
+            : e.target.value.replace(/\D/g, "");
+          setFormData({ ...formData, secondaryContactNumber: val });
+        }}
+        onBlur={(e) => {
+          const val = e.target.value.trim();
+          if (val) {
+            const isValidUAE = /^(\+9715\d{8}|05\d{8})$/.test(val);
+            if (!isValidUAE) {
+              alert(
+                "Please enter a valid UAE number (e.g., +9715XXXXXXXX or 05XXXXXXXX)"
+              );
+            }
+          }
+        }}
+ placeholder="Enter UAE number (e.g. +9715XXXXXXXX or 05XXXXXXXX)"
+        style={{
+          flex: 1,
+          padding: 10,
+          borderRadius: 8,
+          border: "1px solid #ddd",
+          fontSize: 14,
+          boxSizing: "border-box",
+        }}
+      />
+    </div>
+  </div>
+</Row>
+
+
+
+
+
+
   <Input
-  label="Email *"
-  type="email"
-  name="email"
-  value={formData.email}
-  onChange={handleChange}
-  placeholder="Enter parent’s email address"
-  required
-  pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
-  title="Please enter a valid email address"
-/>
+    ref={fieldRefs.email}
+    label="Email *"
+    type="email"
+    name="email"
+    value={formData.email}
+    onChange={handleChange}
+    required
+    style={{
+      borderColor: errorField === "email" ? "red" : "#ddd",
+      backgroundColor: errorField === "email" ? "#ffe6e6" : "white",
+    }}
+  />
 
   <Input
     label="Residence Location"
@@ -284,8 +518,7 @@ const handleSubmit = (e) => {
 
 
 
-
-
+{/* ---------------- Sibling Attendance Section ---------------- */}
 {/* ---------------- Sibling Attendance Section ---------------- */}
 <Card title="👫 Sibling Information">
   {/* Question */}
@@ -304,7 +537,7 @@ const handleSubmit = (e) => {
             setFormData({ 
               ...formData, 
               hasSibling: e.target.value, 
-              siblings: [{ name: "", age: "", contact: "" }], 
+              siblings: [{ name: "", age: "" }], 
               siblingSaved: false 
             })
           }
@@ -344,9 +577,8 @@ const handleSubmit = (e) => {
           }}
         >
           <strong>Sibling {index + 1}</strong>
-          <p style={{ margin: 4 }}>Name: {sibling.name}</p>
+          <p style={{ margin: 4 }}>Full Name: {sibling.name}</p>
           <p style={{ margin: 4 }}>Age: {sibling.age}</p>
-          <p style={{ margin: 4 }}>Phone: {sibling.contact}</p>
         </div>
       ))}
 
@@ -370,12 +602,8 @@ const handleSubmit = (e) => {
   {formData.hasSibling === "yes" && !formData.siblingSaved && (
     <>
       {formData.siblings.map((sibling, index) => {
-        // Validation to allow adding new sibling
         const isValid =
-          sibling.name.trim().length > 0 &&
-          sibling.age >= 8 &&
-          sibling.contact.length >= 8 &&
-          sibling.contact.length <= 10;
+          sibling.name.trim().length > 0 && sibling.age >= 8;
 
         return (
           <div
@@ -406,31 +634,13 @@ const handleSubmit = (e) => {
 
             {/* Age Input */}
             <Input
-  label="Age"
-  type="number"
-          // Minimum age
-          // Maximum age
-  placeholder="Age between 8 and 18"
-  value={sibling.age}
-  onChange={(e) => {
-    let val = parseInt(e.target.value);
-
-    // enforce max
-
-    handleSiblingChange(index, "age", val);
-  }}
-/>
-
-            {/* Phone Input */}
-            <Input
-              label="Phone Number"
-              type="tel"
-              placeholder="0512345678"
-              value={sibling.contact}
+              label="Age"
+              type="number"
+              placeholder="Age between 8 and 18"
+              value={sibling.age}
               onChange={(e) => {
-                let val = e.target.value.replace(/\D/g, "");
-                if (val.length > 10) val = val.slice(0, 10);
-                handleSiblingChange(index, "contact", val);
+                let val = parseInt(e.target.value);
+                handleSiblingChange(index, "age", val);
               }}
             />
 
@@ -491,16 +701,12 @@ const handleSubmit = (e) => {
           width: "fit-content",
           padding: "10px 18px",
           marginTop: 5,
-          cursor: formData.siblings.every(s =>
-            s.name && s.age >= 8 && s.contact.length >= 8 && s.contact.length <= 10
-          ) ? "pointer" : "not-allowed",
-          opacity: formData.siblings.every(s =>
-            s.name && s.age >= 8 && s.contact.length >= 8 && s.contact.length <= 10
-          ) ? 1 : 0.6,
+          cursor: formData.siblings.every(s => s.name && s.age >= 8)
+            ? "pointer"
+            : "not-allowed",
+          opacity: formData.siblings.every(s => s.name && s.age >= 8) ? 1 : 0.6,
         }}
-        disabled={!formData.siblings.every(s =>
-          s.name && s.age >= 8 && s.contact.length >= 8 && s.contact.length <= 10
-        )}
+        disabled={!formData.siblings.every(s => s.name && s.age >= 8)}
       >
         ✅ Save Sibling Details
       </button>
@@ -510,9 +716,10 @@ const handleSubmit = (e) => {
 
 
 
+
           {/* Medical Info */}
    {/* Medical Info */}
-{/* Medical Info — show only if hasSibling === "no" */}
+{/* Show Medical Info only if no sibling */}
 {formData.hasSibling === "no" && (
   <Card title="🩺 Medical Information">
     <p style={{ fontSize: 14, marginBottom: 10 }}>
@@ -526,9 +733,7 @@ const handleSubmit = (e) => {
               type="checkbox"
               checked={formData.medicalConditions.includes(cond)}
               onChange={() => handleMedicalCondition(cond)}
-              disabled={
-                formData.medicalConditions.includes("N/A") && cond !== "N/A"
-              }
+              disabled={formData.medicalConditions.includes("N/A") && cond !== "N/A"}
             />{" "}
             {cond}
           </label>
@@ -570,16 +775,24 @@ const handleSubmit = (e) => {
 
           {/* Agreement */}
           <Card title="🙏 Parent Agreement">
-            <label style={styles.label}>
-              <input
-                type="checkbox"
-                name="parentAgreement"
-                checked={formData.parentAgreement}
-                onChange={handleChange}
-                required
-              />{" "}
-I agree to be responsible for dropping off and picking up my child from the premises.
-            </label>
+           <label
+  ref={fieldRefs.parentAgreement}
+  style={{
+    fontWeight: 600,
+    display: "block",
+    marginBottom: 6,
+    color: errorField === "parentAgreement" ? "red" : "inherit",
+  }}
+>
+  <input
+    type="checkbox"
+    name="parentAgreement"
+    checked={formData.parentAgreement}
+    onChange={handleChange}
+    required
+  />{" "}
+  I agree to be responsible for dropping off and picking up my child from the premises.
+</label>
             <Input
               label="Signature of Parent (Type your full name as signature)"
               name="parentSignature"
@@ -599,8 +812,25 @@ I agree to be responsible for dropping off and picking up my child from the prem
   }}
   disabled={loading}
 >
-  {loading ? "Submitting..." : "✨ Submit Registration"}
-</button>
+ {loading ? "Reviewing..." : "✨ Review Form"}
+ </button>
+{errorField && (
+  <div
+    style={{
+      background: "#ffebeb",
+      color: "#a94442",
+      border: "1px solid #f5c2c2",
+      borderRadius: 8,
+      padding: "10px 15px",
+      marginTop: 10,
+      fontSize: 14,
+      textAlign: "center",
+    }}
+  >
+    ⚠️ Please fill out the <strong>{formatFieldName(errorField)}</strong> field before submitting.
+  </div>
+)}
+
 
         </form>
       </div>
@@ -778,6 +1008,7 @@ const headerStyles = {
     borderTop: "6px solid #6c3483",
     boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
     marginBottom: 20,
+  
   },
   wrapper: {
     maxWidth: 1000,
@@ -844,38 +1075,65 @@ const Input = ({ label, type = "text", ...props }) => (
 
 const CategoryDisplay = ({ age, category }) => {
   let display = "Enter Date of Birth to see category";
+  let bgColor = "#f8f8f8";
+  let textColor = "#333";
+  let borderColor = "#ddd";
+  let isEligible = true;
 
   if (age) {
     if (category === "Kids") {
       display = `Kids (8–12 Years)`;
+      bgColor = "#e8f5e9";
+      textColor = "#2e7d32";
+      borderColor = "#81c784";
     } else if (category === "Teen") {
       display = `Teens (13–18 Years)`;
+      bgColor = "#e3f2fd";
+      textColor = "#1565c0";
+      borderColor = "#64b5f6";
     } else {
       display = "Not eligible (must be 8–18 Age)";
+      bgColor = "#ffebee";
+      textColor = "#c62828";
+      borderColor = "#ef9a9a";
+      isEligible = false;
     }
   }
 
   return (
-    <div style={{ marginTop: 10 }}>
-      <label style={{ fontWeight: 600, marginBottom: 6, display: "block", fontSize: 14 }}>
+    <div style={{ marginTop: 10 }} id="category-display">
+      <label
+        style={{
+          fontWeight: 600,
+          marginBottom: 6,
+          display: "block",
+          fontSize: 14,
+        }}
+      >
         Category
       </label>
       <div
         style={{
           fontSize: 14,
           padding: 8,
-          border: "1px solid #ddd",
+          border: `1px solid ${borderColor}`,
           borderRadius: 8,
-          background: "#f8f8f8",
+          background: bgColor,
+          color: textColor,
           width: "100%",
           maxWidth: 220,
+          fontWeight: 500,
         }}
       >
         {display}
       </div>
+      {/* Pass eligibility status */}
+      <input type="hidden" value={isEligible} data-eligible={isEligible} />
     </div>
   );
 };
+
+
 
 const Card = ({ title, children }) => (
   <div
@@ -918,19 +1176,18 @@ const ImportantNotes = () => (
        </li>
       <li>Age Category: Kids - 8 to 12 Years / Teens – 13 to 18 Years.</li>
       <li>
-      Drop-off at 8:30 AM and pick-up at 4:30 PM will be from the exit near the basketball court.
+      Drop-off at 8:30 AM and pick-up at 4:30 PM will be from the basketball court.
       </li>
       <li>Please carry your ID badge every day.</li>
       <li>
-        Transportation will not be provided; parents are responsible for
-        bringing and collecting their child.
+        Transportation will not be provided; Parents are responsible for
+        dropping off and picking up thier Children from the premises.
       </li>
-      <li>Please bring Bible, notebook, pen And rosery.</li>
+      <li>Please bring a Bible, r osary, notebook, and pen.</li>
       <li>
-  Smartphones, smartwatches, and any other electronic devices are strictly not allowed during the session. Any such devices brought by participants will be collected and safely stored for the duration of the session.
-</li>
+      Smartphones, smartwatches, and other electronic devices are strictly not allowed during the session. Any devices brought by participants will be safely kept and returned after the session.</li>
       <li>
-      For any further information or queries, please contact the coordinators:
+      For any further information or queries, please contact the following numbers:
       </li>
       <ul
         style={{
@@ -940,9 +1197,10 @@ const ImportantNotes = () => (
           listStyleType: "circle",
         }}
       >
-       <li>Jessin Tom James: +971506994594</li>
+   
         <li>Prem Das: +971504751801</li>
         <li>Jenny Thekkooden : +971561213388</li>
+            <li>Jessin Tom James: +971506994594</li>
         <li>Neema Charles : +971506023112</li>
       </ul>
     </ul>
