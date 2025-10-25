@@ -344,8 +344,8 @@ navigate("/preview", { state: { participants: allParticipants } });
           </Card> */}
 
          {/* Contact Details */}
-<Card title="📞 Parent / Guardian Contact">
-  <Row>
+         <Card title="📞 Family Contact">
+         <Row>
     {/* Primary Contact */}
     <div style={{ flex: 1, minWidth: "250px", marginBottom: 10 }}>
       <label style={{ fontWeight: 600, marginBottom: 6, display: "block", fontSize: 14 }}>
@@ -368,8 +368,8 @@ navigate("/preview", { state: { participants: allParticipants } });
         <option value="">Select relationship</option>
         <option value="Father">Father</option>
         <option value="Mother">Mother</option>
-        <option value="Guardian">Guardian</option>
-      </select>
+        <option value="aunt_uncle_grandparent">Aunt / Uncle / Grandparent</option>
+        </select>
     </div>
 
 <Input
@@ -439,9 +439,9 @@ Secondary Contact (Optional)
         }}
       >
         <option value="">Select relationship</option>
-        <option value="Parent">Parent</option>
-        <option value="Guardian">Guardian</option>
-        <option value="Other">Other</option>
+        <option value="Father">Father</option>
+        <option value="Mother">Mother</option>
+        <option value="aunt_uncle_grandparent">Aunt / Uncle / Grandparent</option>
       </select>
 
       {/* Phone number input */}
