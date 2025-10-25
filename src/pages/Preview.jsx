@@ -38,10 +38,16 @@ const Preview = () => {
     }
   };
 
+  /** Map Participant Data **/
   const mapParticipantData = (p) => {
     const age = p.age ?? (p.dob ? calculateAge(p.dob) : null);
     const { label, code } = getCategory(age);
-    const medConds = Array.isArray(p.medicalConditions) ? p.medicalConditions : p.medicalConditions ? [p.medicalConditions] : ["N/A"];
+    const medConds = Array.isArray(p.medicalConditions)
+      ? p.medicalConditions
+      : p.medicalConditions
+      ? [p.medicalConditions]
+      : []; // empty initially
+
     return {
       participantName: p.participantName || p.name || p.siblingName || "",
       dob: p.dob || "",
@@ -104,7 +110,7 @@ const Preview = () => {
   const handleMedicalSelect = (index, value) => {
     setParticipants((prev) => {
       const updated = [...prev];
-      updated[index].medicalConditions = [value];
+      updated[index].medicalConditions = value ? [value] : [];
       if (value !== "Other") updated[index].additionalMedicalNotes = "";
       return updated;
     });
@@ -115,8 +121,13 @@ const Preview = () => {
       const p = participants[i];
       if (!p.participantName) return `Participant ${i + 1}: Name is required`;
       if (!p.age || !p.categoryCode) return `Participant ${i + 1}: Age/Category is required`;
-      if (!p.medicalConditions.length) return `Participant ${i + 1}: Medical condition is required`;
-      if (p.medicalConditions.includes("Other") && !p.additionalMedicalNotes) return `Participant ${i + 1}: Specify other medical condition`;
+
+      // Allow "N/A", just ensure something is selected
+      if (!p.medicalConditions.length)
+        return `Participant ${i + 1}: Please select a medical condition`;
+      if (p.medicalConditions.includes("Other") && !p.additionalMedicalNotes)
+        return `Participant ${i + 1}: Specify other medical condition`;
+
       if (!p.primaryContactNumber) return `Participant ${i + 1}: Primary contact number is required`;
       if (!p.primaryContactRelation) return `Participant ${i + 1}: Primary contact relationship is required`;
       if (!p.secondaryContactNumber) return `Participant ${i + 1}: Secondary contact number is required`;
@@ -162,6 +173,7 @@ const Preview = () => {
     }
   };
 
+  /** UI **/
   return (
     <div style={styles.container}>
       <header style={styles.header}>
@@ -181,38 +193,71 @@ const Preview = () => {
 
             <div style={styles.field}>
               <label>Name</label>
-              <input style={styles.input} value={p.participantName} onChange={(e) => handleChange(index, "participantName", e.target.value)} />
+              <input
+                style={styles.input}
+                value={p.participantName}
+                onChange={(e) => handleChange(index, "participantName", e.target.value)}
+              />
             </div>
 
             <div style={styles.field}>
               <label>Age</label>
-              <input style={styles.input} value={p.age} readOnly />
+              <input style={styles.input} value={p.age || ""} readOnly />
             </div>
 
             <div style={styles.field}>
               <label>Primary Contact</label>
-              <input style={styles.input} value={p.primaryContactNumber} onChange={(e) => handleChange(index, "primaryContactNumber", e.target.value)} />
+              <input
+                style={styles.input}
+                value={p.primaryContactNumber}
+                onChange={(e) => handleChange(index, "primaryContactNumber", e.target.value)}
+              />
               <small>Relationship: {p.primaryContactRelation || "-"}</small>
             </div>
 
             <div style={styles.field}>
               <label>Secondary Contact</label>
-              <input style={styles.input} value={p.secondaryContactNumber} onChange={(e) => handleChange(index, "secondaryContactNumber", e.target.value)} />
+              <input
+                style={styles.input}
+                value={p.secondaryContactNumber}
+                onChange={(e) => handleChange(index, "secondaryContactNumber", e.target.value)}
+              />
               <small>Relationship: {p.secondaryContactRelationship || "-"}</small>
             </div>
 
             <div style={styles.field}>
               <label>Email</label>
-              <input style={styles.input} value={p.email} onChange={(e) => handleChange(index, "email", e.target.value)} />
+              <input
+                style={styles.input}
+                value={p.email}
+                onChange={(e) => handleChange(index, "email", e.target.value)}
+              />
             </div>
 
             <div style={styles.field}>
               <label>Medical Condition</label>
-              <select style={styles.select} value={p.medicalConditions[0]} onChange={(e) => handleMedicalSelect(index, e.target.value)}>
-                {MEDICAL_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+              <select
+                style={styles.select}
+                value={p.medicalConditions[0] || ""}
+                onChange={(e) => handleMedicalSelect(index, e.target.value)}
+              >
+                <option value="">Select a condition</option>
+                {MEDICAL_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
               </select>
+
               {p.medicalConditions.includes("Other") && (
-                <input style={styles.input} placeholder="Specify other condition" value={p.additionalMedicalNotes} onChange={(e) => handleChange(index, "additionalMedicalNotes", e.target.value)} />
+                <input
+                  style={styles.input}
+                  placeholder="Specify other condition"
+                  value={p.additionalMedicalNotes}
+                  onChange={(e) =>
+                    handleChange(index, "additionalMedicalNotes", e.target.value)
+                  }
+                />
               )}
               <small style={{ color: "#555" }}>Choose N/A if none</small>
             </div>
@@ -221,26 +266,66 @@ const Preview = () => {
       </div>
 
       <div style={styles.buttonGroup}>
-        <button style={styles.backBtn} onClick={() => navigate(-1)} disabled={loading}>← Back</button>
-        <button style={styles.submitBtn} onClick={handleFinalSubmit} disabled={loading}>{loading ? "Submitting..." : "✅ Submit All"}</button>
+        <button style={styles.backBtn} onClick={() => navigate(-1)} disabled={loading}>
+          ← Back
+        </button>
+        <button
+          style={styles.submitBtn}
+          onClick={handleFinalSubmit}
+          disabled={loading}
+        >
+          {loading ? "Submitting..." : "✅ Submit All"}
+        </button>
       </div>
     </div>
   );
 };
 
+/** Styles **/
 const styles = {
   container: { maxWidth: 950, margin: "0 auto", padding: 20, fontFamily: "'Poppins', sans-serif" },
   header: { textAlign: "center", marginBottom: 25 },
-  cardsContainer: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 25 },
+  cardsContainer: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+    gap: 25,
+  },
   card: { borderRadius: 16, padding: 20, boxShadow: "0 6px 20px rgba(0,0,0,0.12)" },
   cardHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 15 },
-  categoryBadge: { background: "#6c3483", color: "#fff", padding: "4px 10px", borderRadius: 12, fontSize: 12, fontWeight: 600 },
+  categoryBadge: {
+    background: "#6c3483",
+    color: "#fff",
+    padding: "4px 10px",
+    borderRadius: 12,
+    fontSize: 12,
+    fontWeight: 600,
+  },
   field: { marginBottom: 15, display: "flex", flexDirection: "column" },
   input: { padding: 12, borderRadius: 8, border: "1px solid #ccc", fontSize: 14 },
   select: { padding: 12, borderRadius: 8, border: "1px solid #ccc", fontSize: 14 },
-  buttonGroup: { display: "flex", justifyContent: "center", gap: 15, marginTop: 30, flexWrap: "wrap" },
-  backBtn: { backgroundColor: "#aaa", color: "#fff", border: "none", padding: "12px 20px", borderRadius: 8, cursor: "pointer" },
-  submitBtn: { backgroundColor: "#6c3483", color: "#fff", border: "none", padding: "12px 20px", borderRadius: 8, cursor: "pointer" },
+  buttonGroup: {
+    display: "flex",
+    justifyContent: "center",
+    gap: 15,
+    marginTop: 30,
+    flexWrap: "wrap",
+  },
+  backBtn: {
+    backgroundColor: "#aaa",
+    color: "#fff",
+    border: "none",
+    padding: "12px 20px",
+    borderRadius: 8,
+    cursor: "pointer",
+  },
+  submitBtn: {
+    backgroundColor: "#6c3483",
+    color: "#fff",
+    border: "none",
+    padding: "12px 20px",
+    borderRadius: 8,
+    cursor: "pointer",
+  },
 };
 
 export default Preview;
