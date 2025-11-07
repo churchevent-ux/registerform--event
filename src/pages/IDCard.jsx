@@ -166,23 +166,40 @@ const IDCard = () => {
         {/* Schedule / Notes */}
         <div style={styles.scheduleCard}>
         <p style={{ fontSize: "12px", color: "#bf524b" }}>
-  <span style={{ fontWeight: "bold" }}>Note:</span> Registration is confirmed only after the payment of AED 100/- each for an applicant.
-</p>
-
-          <h3 style={styles.scheduleTitle}>  Lanyard Distribution at Church Premises          </h3>
-          <div style={styles.scheduleList}>
-            <p>
-              <strong>Saturday, November 15 & 22, 2025:</strong> 9:30am–12:30pm | 4:00pm–6:30pm
-            </p>
-            <p>
-              <strong>Sunday, November 16 & 23, 2025:</strong> 9:30am–11:30am | 5:30pm–7:30pm
-            </p>
-            <p>
-              <strong>Saturday, December 27, 2025:</strong> 9:30am–12:00pm
-            </p>
+          <span style={{ fontWeight: "bold" }}>Note:</span> Registration is confirmed only after the payment of AED 100/- each for an applicant.
+        </p>
+        <h3 style={styles.scheduleTitle}>Lanyard Distribution at Church Premises</h3>
+        <div style={styles.scheduleList}>
+          <div style={{ marginBottom: "1em" }}>
+            <span style={{ color: "#6c3483", fontWeight: "bold" }}>First Batch</span>
+            <ul style={{ margin: "0.5em 0 0 1em" }}>
+              <li>Saturday, November 15, 2025: 9:30am–1:30pm & 4:00pm–7:30pm</li>
+              <li>Sunday, November 16, 2025: 9:30am–1:30pm & 4:00pm–7:30pm</li>
+            </ul>
           </div>
+          <div style={{ marginBottom: "1em" }}>
+            <span style={{ color: "#6c3483", fontWeight: "bold" }}>Second Batch</span>
+            <ul style={{ margin: "0.5em 0 0 1em" }}>
+              <li>Saturday, November 22, 2025: 9:30am–1:30pm & 4:00pm–7:30pm</li>
+              <li>Sunday, November 23, 2025: 9:30am–1:30pm</li>
+            </ul>
+          </div>
+          <div style={{ marginBottom: "1em" }}>
+            <span style={{ color: "#6c3483", fontWeight: "bold" }}>Third Batch</span>
+            <ul style={{ margin: "0.5em 0 0 1em" }}>
+              <li>Saturday, December 13, 2025: 9:30am–1:30pm & 4:00pm–7:30pm</li>
+              <li>Sunday, December 14, 2025: 9:30am–1:30pm & 4:00pm–7:30pm</li>
+            </ul>
+          </div>
+          <div style={{ marginBottom: "1em" }}>
+            <span style={{ color: "#6c3483", fontWeight: "bold" }}>Final Batch</span>
+            <ul style={{ margin: "0.5em 0 0 1em" }}>
+              <li>Saturday, December 27, 2025: 9:30am–1:30pm & 4:00pm–7:30pm</li>
+            </ul>
          
+          </div>
         </div>
+      </div>
       </div>
 
       {/* Buttons */}
