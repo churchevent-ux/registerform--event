@@ -35,7 +35,7 @@ const IDCard = () => {
     }));
 
     setParticipants(allParticipants);
-  }, [state, navigate]);
+  }, [state, navigate, getCategoryCode]);
 
   // Generate barcode for each participant
   useEffect(() => {
