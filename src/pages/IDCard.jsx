@@ -277,4 +277,4 @@ const styles = {
   },
 };
 
-export default IDCard;
+export default IDCard; 
