@@ -170,22 +170,16 @@ const IDCard = () => {
         </p>
         <h3 style={styles.scheduleTitle}>Lanyard Distribution at Church Premises</h3>
         <div style={styles.scheduleList}>
+      
           <div style={{ marginBottom: "1em" }}>
             <span style={{ color: "#6c3483", fontWeight: "bold" }}>First Batch</span>
-            <ul style={{ margin: "0.5em 0 0 1em" }}>
-              <li>Saturday, November 15, 2025: 9:30am–1:30pm & 4:00pm–7:30pm</li>
-              <li>Sunday, November 16, 2025: 9:30am–1:30pm & 4:00pm–7:30pm</li>
-            </ul>
-          </div>
-          <div style={{ marginBottom: "1em" }}>
-            <span style={{ color: "#6c3483", fontWeight: "bold" }}>Second Batch</span>
             <ul style={{ margin: "0.5em 0 0 1em" }}>
               <li>Saturday, November 22, 2025: 9:30am–1:30pm & 4:00pm–7:30pm</li>
               <li>Sunday, November 23, 2025: 9:30am–1:30pm</li>
             </ul>
           </div>
           <div style={{ marginBottom: "1em" }}>
-            <span style={{ color: "#6c3483", fontWeight: "bold" }}>Third Batch</span>
+            <span style={{ color: "#6c3483", fontWeight: "bold" }}>Second Batch</span>
             <ul style={{ margin: "0.5em 0 0 1em" }}>
               <li>Saturday, December 13, 2025: 9:30am–1:30pm & 4:00pm–7:30pm</li>
               <li>Sunday, December 14, 2025: 9:30am–1:30pm & 4:00pm–7:30pm</li>
